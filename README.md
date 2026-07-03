@@ -1,46 +1,48 @@
-# Tally
+<p align="center">
+  <img src="icons/tally_icon.svg" alt="Tally" width="96" height="110" />
+</p>
 
-セルフホスト可能な **サブスクリプション管理ダッシュボード**。
-契約中のサブスク（料金・周期・更新日・カテゴリ）を登録し、月額・年額の合計や次の支払い予定をひと目で把握できます。データはすべて自分のサーバー内の SQLite に保存されます。
+<h1 align="center">Tally</h1>
 
-Web ブラウザからアクセスし、Docker で一発起動できます。
+<p align="center">A self-hostable subscription management dashboard.</p>
 
-![Tally](docs/screenshot.png)
+<p align="center">
+  English · <a href="README_jp.md">日本語</a>
+</p>
 
-## 特長
+---
 
-- 📊 月額・年額の合計を自動集計（日/週/月/年・N周期ごとに対応）
-- 💱 **多通貨対応＋自動レート換算** — 各サブスクの通貨をメイン通貨に換算して集計
-- 🎨 **サービスアイコン** — [simple-icons](https://www.npmjs.com/package/simple-icons) からブランドロゴを設定
-- 🌗 **ダーク / ライトテーマ**切り替え
-- 🔔 **Discord 通知（Embed）** — 近日中の支払いを Webhook で送信（cron 連携可）
-- 🗂 **カテゴリ・支払い方法**をドロップダウンで選択（環境設定で追加/削除、初期値プリセット）
-- 📅 **カレンダー** — 支払い日を月表示
-- 📈 **統計** — 最高額・月額平均・年間費用、カテゴリ/支払い方法の円グラフ、今後12ヶ月の折れ線グラフ
-- 📊 次の支払い予定の自動計算（任意で次回支払日を明示指定可）/ カテゴリ別ドーナツ / 各行に支払い進捗バー
-- 🔐 シンプルなパスワードログイン（初回起動時に設定）
-- 🐳 Docker / docker compose でセルフホスト（slim イメージ・既存DBの自動マイグレーション）
-- 🎨 ミニマルでエディトリアルな UI
+Tally helps you keep track of the subscriptions you pay for — their cost, billing
+cycle, renewal dates, and total monthly / yearly spend — all on a server you own.
+Access it from any web browser and run it with a single Docker command.
 
-## 技術スタック
+## Features
 
-Next.js (App Router) + TypeScript / Prisma + SQLite / Tailwind CSS v4
+- Multi-user — each account manages its own subscriptions, categories, and settings
+- Automatic monthly / yearly totals (day / week / month / year, every N cycles)
+- Multi-currency with automatic conversion to your main currency
+- Service icons from [simple-icons](https://www.npmjs.com/package/simple-icons), or upload your own image
+- Dark / light theme and i18n (English / 日本語)
+- Discord notifications (embed) for upcoming payments — built-in daily scheduler, no cron needed
+- Calendar view and statistics (top costs, pie & line charts)
+- Editable categories & payment methods
+- CSV / JSON export & import
+- Self-hosted with Docker — data stays in SQLite on your server
 
-## クイックスタート（Docker Compose 推奨）
+## Quick start (Docker Compose)
 
 ```bash
-# 1. SESSION_SECRET を安全な値に変更
-#    docker-compose.yml の SESSION_SECRET を編集するか、下記で生成した値を設定
+# 1. Set a strong SESSION_SECRET in docker-compose.yml (or generate one)
 openssl rand -base64 32
 
-# 2. 起動
+# 2. Build & start
 docker compose up -d --build
 ```
 
-ブラウザで <http://localhost:6400> を開くと、初回はパスワード設定画面が表示されます。
-データは名前付きボリューム `tally-data`（コンテナ内 `/data/tally.db`）に永続化されます。
+Open <http://localhost:6400>. On first run you'll create an account (username +
+password). Your data is stored only on your server.
 
-### docker run で起動する場合
+## Run with docker run
 
 ```bash
 docker build -t tally .
@@ -48,67 +50,81 @@ docker run -d \
   --name tally \
   -p 6400:6400 \
   -e SESSION_SECRET="$(openssl rand -base64 32)" \
+  -e TZ="Asia/Tokyo" \
   -v tally-data:/data \
   tally
 ```
 
-## 環境変数
+## Environment variables
 
-| 変数 | 説明 | 既定値 |
+| Variable | Description | Default |
 | --- | --- | --- |
-| `SESSION_SECRET` | セッション Cookie の署名鍵。**本番では必ず変更** | （開発用の固定値） |
-| `DATABASE_URL` | SQLite ファイルの場所 | `file:/data/tally.db`（Docker） |
-| `PORT` | 待ち受けポート | `6400` |
+| `SESSION_SECRET` | Signing key for session cookies. Change in production. | (dev fallback) |
+| `DATABASE_URL` | SQLite file location | `file:/data/tally.db` (Docker) |
+| `TZ` | Timezone for the notification scheduler | `Asia/Tokyo` |
+| `PORT` | Listening port | `6400` |
 
-## ローカル開発
+## Discord notifications
 
-```bash
-npm install
-cp .env.example .env        # 必要に応じて編集
-npx prisma db push          # SQLite を初期化
-npm run dev                 # http://localhost:6400
-```
+1. Create a webhook in your Discord channel settings.
+2. In Settings -> Notifications, paste the webhook URL, enable the daily
+   notification, and pick a send time and how many days ahead to notify.
+3. Use "Send test now" to verify.
 
-## Discord 通知（Embed）
+Tally's built-in scheduler sends upcoming payments once per day at the chosen
+time (in the container's timezone) — no cron required.
 
-1. Discord のチャンネル設定 → 連携サービス → ウェブフック で URL を発行
-2. Tally の「環境設定 → 通知」に Webhook URL を設定
-3. 「毎日この時刻に自動で Discord 通知する」を ON にし、**送信時刻**と**何日前まで通知するか**を設定
-4. 「今すぐテスト送信」で動作確認
+## Currencies & rates
 
-cron の設定は不要です。Tally に内蔵されたスケジューラーが、指定時刻に近日中の支払いを
-自動で Discord に送信します（1日1回・重複送信なし）。
+Pick your main currency in Settings. Subscriptions in other currencies are
+converted automatically using rates from
+[open.er-api.com](https://open.er-api.com) (no API key), refreshed every 6 hours
+or on demand.
 
-送信時刻はコンテナのタイムゾーンに従います。`docker-compose.yml` の `TZ`（既定:
-`Asia/Tokyo`）で変更できます。
+## Backup
 
-> 補足: 外部スケジューラーから叩きたい上級者向けに `GET /api/notify?token=...`
-> エンドポイントも残しています（トークンで保護）。通常は不要です。
-
-## 通貨とレート換算
-
-「環境設定 → メイン通貨」で集計通貨を選びます。各サブスクには個別の通貨を設定でき、
-メイン通貨に自動換算して合計に反映されます。レートは [open.er-api.com](https://open.er-api.com)
-から取得し（APIキー不要）、6時間ごと、または「レートを今すぐ更新」で更新します。
-
-## データのバックアップ
-
-SQLite ファイルをコピーするだけです。
+The SQLite file holds everything:
 
 ```bash
 docker compose cp tally:/data/tally.db ./tally-backup.db
 ```
 
-## パスワードを忘れた場合
+## Updating
 
-データベースの設定行をリセットすると、次回アクセス時に再設定画面が表示されます。
+Tally applies additive schema migrations automatically on start, so your data is
+preserved across updates.
 
 ```bash
-docker compose exec tally npx prisma db execute \
-  --schema prisma/schema.prisma \
-  --stdin <<< 'UPDATE "Setting" SET "passwordHash" = NULL WHERE id = 1;'
+git pull
+docker compose up -d --build
 ```
 
-## ライセンス
+## Forgot password
 
-MIT
+List users (usernames):
+
+```bash
+docker compose exec -T tally node -e "const{PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.user.findMany().then(u=>{console.log(u.map(x=>x.username));return p.\$disconnect()})"
+```
+
+## Local development
+
+```bash
+npm install
+cp .env.example .env
+npx prisma db push
+npm run dev   # http://localhost:6400
+```
+
+## Tech stack
+
+Next.js (App Router) · TypeScript · Prisma · SQLite · Tailwind CSS
+
+## License
+
+Copyright (C) 2026 CubeZeero
+
+Licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
+If you run a modified version of Tally and make it available to users over a
+network, you must also make the source code of your modified version available
+to them.

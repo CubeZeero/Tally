@@ -20,3 +20,6 @@ scripts/init.sql
 *.log
 next-env.d.ts
 .tsbuildinfo
+
+# local editor settings
+.claude/settings.local.json

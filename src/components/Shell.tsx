@@ -4,6 +4,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { MobileNav } from "./MobileNav";
 import { logout } from "@/app/actions";
 import { serverT } from "@/lib/server-lang";
+import { getSession } from "@/lib/auth";
+import { getUser } from "@/lib/db";
 
 export type NavKey =
   | "dashboard"
@@ -44,6 +46,8 @@ export async function Shell({
   children: React.ReactNode;
 }) {
   const { t } = await serverT();
+  const userId = await getSession();
+  const username = userId ? (await getUser(userId))?.username ?? "" : "";
   return (
     <div className="min-h-screen flex">
       {/* Left rail */}
@@ -100,16 +104,33 @@ export async function Shell({
               />
             ))}
           </nav>
-          <div className="ml-auto xl:hidden">
-            <MobileNav
-              active={active}
-              items={NAV.map((n) => ({
-                key: n.key,
-                href: n.href,
-                label: t(`nav.${n.key}`),
-                icon: n.icon,
-              }))}
-            />
+          <div className="ml-auto flex items-center gap-4">
+            {username && (
+              <span className="hidden xl:inline-flex items-center gap-1.5 label label-soft">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 12a4 4 0 100-8 4 4 0 000 8zM5 20a7 7 0 0114 0"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {username}
+              </span>
+            )}
+            <div className="xl:hidden">
+              <MobileNav
+                active={active}
+                username={username}
+                items={NAV.map((n) => ({
+                  key: n.key,
+                  href: n.href,
+                  label: t(`nav.${n.key}`),
+                  icon: n.icon,
+                }))}
+              />
+            </div>
           </div>
         </header>
 

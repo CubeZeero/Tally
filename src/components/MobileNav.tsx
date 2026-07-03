@@ -9,9 +9,11 @@ import { logout } from "@/app/actions";
 export function MobileNav({
   items,
   active,
+  username,
 }: {
   items: { key: string; href: string; label: string; icon: string }[];
   active: string;
+  username?: string;
 }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
@@ -56,7 +58,22 @@ export function MobileNav({
               </svg>
             </button>
 
-            <nav className="mt-8 flex flex-col gap-1">
+            {username && (
+              <div className="mt-4 flex items-center gap-2 label label-soft">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 12a4 4 0 100-8 4 4 0 000 8zM5 20a7 7 0 0114 0"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {username}
+              </div>
+            )}
+
+            <nav className="mt-6 flex flex-col gap-1">
               {items.map((n) => (
                 <Link
                   key={n.key}

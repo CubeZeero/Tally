@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// One account per user. Per-user settings live here too.
+model User {
+  id                String    @id @default(cuid())
+  username          String    @unique
+  passwordHash      String
+  currency          String    @default("JPY") // main display currency
+  discordWebhookUrl String?
+  notifyToken       String? // token for the optional /api/notify endpoint
+  notifyDaysBefore  Int       @default(3)
+  notifyEnabled     Boolean   @default(false) // built-in daily scheduler on/off
+  notifyHour        Int       @default(9) // hour of day (server local time) to send
+  lastNotifiedOn    String? // YYYY-MM-DD of the last auto notification (dedupe)
+  ratesJson         String? // JSON: { "USD": <units per 1 main>, ... }
+  ratesUpdatedAt    DateTime?
+  createdAt         DateTime  @default(now())
+
+  subscriptions  Subscription[]
+  categories     Category[]
+  paymentMethods PaymentMethod[]
+}
+
+model Category {
+  id     String @id @default(cuid())
+  userId String?
+  name   String
+  sort   Int    @default(0)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model PaymentMethod {
+  id     String @id @default(cuid())
+  userId String?
+  name   String
+  sort   Int    @default(0)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model Subscription {
+  id            String   @id @default(cuid())
+  userId        String?
+  name          String
+  description   String?
+  cost          Float
+  currency      String? // null => use main currency
+  icon          String? // simple-icons slug, e.g. "netflix"
+  image         String? // custom icon as a data URL (overrides icon when set)
+  cycle         String   @default("month") // day | week | month | year
+  cycleCount    Int      @default(1) // every N units
+  startDate     DateTime // first billing date
+  nextBillDate  DateTime? // optional explicit next payment date (anchor)
+  category      String?
+  paymentMethod String?
+  url           String?
+  color         String   @default("#ff7a00")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

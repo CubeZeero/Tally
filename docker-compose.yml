@@ -1,0 +1,18 @@
+services:
+  tally:
+    build: .
+    container_name: tally
+    restart: unless-stopped
+    ports:
+      - "6400:6400"
+    environment:
+      # 本番では必ず長いランダム文字列に変更してください（例: openssl rand -base64 32）
+      SESSION_SECRET: "change-me-to-a-long-random-string"
+      DATABASE_URL: "file:/data/tally.db"
+      # 自動通知の送信時刻はこのタイムゾーンに従います
+      TZ: "Asia/Tokyo"
+    volumes:
+      - tally-data:/data
+
+volumes:
+  tally-data:

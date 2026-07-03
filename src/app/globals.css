@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #efede9;
+  --color-paper-soft: #f5f4f1;
+  --color-ink: #121212;
+  --color-ink-soft: #6b6b6b;
+  --color-ink-faint: #aaa7a0;
+  --color-line: #d8d6d1;
+  --color-accent: #ff7a00;
+
+  --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+
+  --tracking-label: 0.18em;
+}
+
+/* Dark theme overrides — toggled via data-theme on <html>. */
+[data-theme="dark"] {
+  --color-paper: #131312;
+  --color-paper-soft: #1b1b1a;
+  --color-ink: #f1efea;
+  --color-ink-soft: #8f8d87;
+  --color-ink-faint: #5b5a55;
+  --color-line: #2c2b29;
+  --color-accent: #ff8a1f;
+}
+
+html {
+  background: var(--color-paper);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tiny uppercase editorial label, used throughout the UI. */
+.label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-ink);
+  line-height: 1.4;
+}
+
+.label-soft {
+  color: var(--color-ink-soft);
+}
+
+/* Top-nav title: brightens on hover, accent when selected. */
+.nav-title {
+  color: var(--color-ink);
+  transition: color 0.15s ease;
+}
+
+.nav-title:hover {
+  color: color-mix(in srgb, var(--color-ink) 52%, white);
+}
+
+.nav-title-active {
+  color: var(--color-accent);
+  transition: color 0.15s ease;
+}
+
+.nav-title-active:hover {
+  color: color-mix(in srgb, var(--color-accent) 70%, white);
+}
+
+/* Flat solid orb (replaces the original gradient blob). */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+/* Auth-screen orb: small corner accent on mobile, prominent on desktop. */
+.auth-blob {
+  width: min(52vw, 230px);
+  height: min(52vw, 230px);
+  top: -10%;
+  right: -16%;
+  transform: none;
+}
+
+@media (min-width: 768px) {
+  .auth-blob {
+    width: 560px;
+    height: 560px;
+    top: 50%;
+    right: -140px;
+    transform: translateY(-50%);
+  }
+}
+
+.headline {
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+/* Geometric circle + square mark. */
+.mark {
+  display: inline-flex;
+  align-items: center;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+.field {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-line);
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.field:focus {
+  border-color: var(--color-ink);
+}
+
+.field::placeholder {
+  color: #b5b3ad;
+}
+
+select.field {
+  appearance: none;
+  cursor: pointer;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    opacity 0.15s ease;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.05);
+  opacity: 1;
+}
+
+.card {
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  background: var(--color-paper-soft);
+}
+
+@keyframes float-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.float-in {
+  animation: float-in 0.5s ease both;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: var(--color-paper-soft);
+}
+
+.chip button {
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.chip button:hover {
+  color: var(--color-accent);
+}
+
+.icon-svg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-svg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

@@ -82,6 +82,7 @@ const ja: Dict = {
   "auth.err.usernameShort": "ユーザー名は3文字以上にしてください。",
   "auth.err.taken": "そのユーザー名は既に使われています。",
   "auth.err.wrongLogin": "ユーザー名またはパスワードが正しくありません。",
+  "auth.err.registrationClosed": "このサーバーでは新規登録が無効になっています。",
 
   // dashboard
   "dash.monthlySpend": "今月の支出",
@@ -169,6 +170,8 @@ const ja: Dict = {
   "set.newPasswordPh": "新しいパスワード（8文字以上）",
   "set.saveButton": "設定を保存",
   "set.err.passwordShort": "新しいパスワードは8文字以上にしてください。",
+  "set.err.badWebhook":
+    "Discord の Webhook URL が正しくありません（https://discord.com/api/webhooks/... の形式）。",
   "set.rates": "為替レート",
   "set.ratesUpdated": "最終更新:",
   "set.ratesNever": "未取得",
@@ -314,6 +317,7 @@ const en: Dict = {
   "auth.err.usernameShort": "Username must be at least 3 characters.",
   "auth.err.taken": "That username is already taken.",
   "auth.err.wrongLogin": "Incorrect username or password.",
+  "auth.err.registrationClosed": "Registration is disabled on this server.",
 
   "dash.monthlySpend": "This month's spend",
   "dash.managingPre": "Managing",
@@ -398,6 +402,8 @@ const en: Dict = {
   "set.newPasswordPh": "New password (8+ characters)",
   "set.saveButton": "Save settings",
   "set.err.passwordShort": "New password must be at least 8 characters.",
+  "set.err.badWebhook":
+    "Invalid Discord webhook URL (expected https://discord.com/api/webhooks/...).",
   "set.rates": "Exchange rates",
   "set.ratesUpdated": "Last updated:",
   "set.ratesNever": "Never",

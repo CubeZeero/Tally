@@ -6,11 +6,16 @@ services:
     ports:
       - "6400:6400"
     environment:
-      # 本番では必ず長いランダム文字列に変更してください（例: openssl rand -base64 32）
-      SESSION_SECRET: "change-me-to-a-long-random-string"
+      # Set a strong SESSION_SECRET in a .env file next to this file (git-ignored):
+      #   SESSION_SECRET=$(openssl rand -base64 32)
+      # If left empty, the app generates a random secret per process (sessions
+      # reset on restart). Never commit a real secret to the repo.
+      SESSION_SECRET: "${SESSION_SECRET:-}"
       DATABASE_URL: "file:/data/tally.db"
-      # 自動通知の送信時刻はこのタイムゾーンに従います
-      TZ: "Asia/Tokyo"
+      # Notification send time follows this timezone.
+      TZ: "${TZ:-Asia/Tokyo}"
+      # Set to 1 to block new sign-ups after the first account is created.
+      DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-}"
     volumes:
       - tally-data:/data
 

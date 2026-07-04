@@ -9,6 +9,7 @@ import {
   createUser,
   destroySession,
   getSession,
+  registrationAllowed,
   requireAuth,
   setUserPassword,
   verifyLogin,
@@ -16,6 +17,7 @@ import {
 import type { Cycle } from "@/lib/money";
 import { refreshRates } from "@/lib/rates";
 import { notifyUpcoming } from "@/lib/notify";
+import { isDiscordWebhook } from "@/lib/discord";
 import { parseImport } from "@/lib/data";
 import { getT } from "@/lib/i18n";
 import { getLang } from "@/lib/server-lang";
@@ -39,6 +41,9 @@ export async function register(
   formData: FormData,
 ): Promise<ActionState> {
   const t = getT(await getLang());
+  if (!(await registrationAllowed())) {
+    return { error: t("auth.err.registrationClosed") };
+  }
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
@@ -84,6 +89,10 @@ export async function updateSettings(
   const currency = String(formData.get("currency") ?? "JPY");
   const discordWebhookUrl =
     String(formData.get("discordWebhookUrl") ?? "").trim() || null;
+
+  if (discordWebhookUrl && !isDiscordWebhook(discordWebhookUrl)) {
+    return { error: getT(await getLang())("set.err.badWebhook") };
+  }
   const notifyDaysBefore = Math.max(
     0,
     parseInt(String(formData.get("notifyDaysBefore") ?? "3"), 10) || 0,
@@ -196,7 +205,10 @@ function parseSubscription(formData: FormData) {
     cost: Number.isFinite(cost) ? cost : 0,
     currency: String(formData.get("currency") ?? "").trim() || null,
     icon: String(formData.get("icon") ?? "").trim().toLowerCase() || null,
-    image: String(formData.get("image") ?? "").trim() || null,
+    image: (() => {
+      const v = String(formData.get("image") ?? "").trim();
+      return v.startsWith("data:image/") ? v : null;
+    })(),
     cycle,
     cycleCount,
     startDate,

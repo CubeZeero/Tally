@@ -8,11 +8,33 @@ import { prisma, seedUserDefaults } from "./db";
 const COOKIE = "tally_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
+// Placeholder values that must NOT be used as a real signing key.
+const INSECURE_SECRETS = new Set([
+  "",
+  "tally-dev-secret-change-me-in-production-please",
+  "change-me-to-a-long-random-string",
+]);
+
+let cachedSecret: Uint8Array | null = null;
+
 function secret() {
-  const raw =
-    process.env.SESSION_SECRET ||
-    "tally-dev-secret-change-me-in-production-please";
-  return new TextEncoder().encode(raw);
+  if (cachedSecret) return cachedSecret;
+  let raw = (process.env.SESSION_SECRET ?? "").trim();
+  if (INSECURE_SECRETS.has(raw)) {
+    // Never fall back to a public/known constant — that would let anyone forge
+    // sessions. Use an ephemeral random secret for this process instead.
+    const bytes = new Uint8Array(32);
+    globalThis.crypto.getRandomValues(bytes);
+    raw = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    console.warn(
+      "[auth] SESSION_SECRET is unset or a placeholder. Using a random per-process secret; " +
+        "set a stable SESSION_SECRET to keep sessions valid across restarts.",
+    );
+  }
+  cachedSecret = new TextEncoder().encode(raw);
+  return cachedSecret;
 }
 
 export function normalizeUsername(v: string): string {
@@ -22,6 +44,18 @@ export function normalizeUsername(v: string): string {
 /** True when at least one account exists. */
 export async function anyUsers(): Promise<boolean> {
   return (await prisma.user.count()) > 0;
+}
+
+/**
+ * Whether new sign-ups are allowed. The first account is always allowed so a
+ * fresh instance can be set up; set DISABLE_REGISTRATION=1 to lock it after.
+ */
+export async function registrationAllowed(): Promise<boolean> {
+  const disabled = ["1", "true", "yes"].includes(
+    (process.env.DISABLE_REGISTRATION ?? "").toLowerCase(),
+  );
+  if (!disabled) return true;
+  return !(await anyUsers()); // still allow creating the very first account
 }
 
 export async function createUser(

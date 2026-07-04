@@ -59,10 +59,18 @@ docker run -d \
 
 | 変数 | 説明 | 既定値 |
 | --- | --- | --- |
-| `SESSION_SECRET` | セッション Cookie の署名鍵。本番では必ず変更 | （開発用の値） |
+| `SESSION_SECRET` | セッション Cookie の署名鍵。長いランダム文字列を設定（`openssl rand -base64 32`）。未設定時はプロセスごとにランダム生成され、再起動でセッションがリセットされます。 | （プロセスごとにランダム） |
 | `DATABASE_URL` | SQLite ファイルの場所 | `file:/data/tally.db`（Docker） |
 | `TZ` | 通知スケジューラーのタイムゾーン | `Asia/Tokyo` |
+| `DISABLE_REGISTRATION` | `1` で最初のアカウント作成後の新規登録を無効化 | （未設定） |
 | `PORT` | 待ち受けポート | `6400` |
+
+秘密情報は `docker-compose.yml` と同じ場所に置く git 管理外の `.env` で渡してください
+（実際の秘密鍵はコミットしないこと）:
+
+```bash
+echo "SESSION_SECRET=$(openssl rand -base64 32)" >> .env
+```
 
 ## Discord 通知
 

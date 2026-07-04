@@ -59,10 +59,18 @@ docker run -d \
 
 | Variable | Description | Default |
 | --- | --- | --- |
-| `SESSION_SECRET` | Signing key for session cookies. Change in production. | (dev fallback) |
+| `SESSION_SECRET` | Signing key for session cookies. Use a long random string (`openssl rand -base64 32`). If unset, a random per-process secret is used and sessions reset on restart. | (random per process) |
 | `DATABASE_URL` | SQLite file location | `file:/data/tally.db` (Docker) |
 | `TZ` | Timezone for the notification scheduler | `Asia/Tokyo` |
+| `DISABLE_REGISTRATION` | Set to `1` to block new sign-ups after the first account | (unset) |
 | `PORT` | Listening port | `6400` |
+
+Provide secrets via a git-ignored `.env` file next to `docker-compose.yml` (do
+not commit real secrets):
+
+```bash
+echo "SESSION_SECRET=$(openssl rand -base64 32)" >> .env
+```
 
 ## Discord notifications
 

@@ -54,7 +54,7 @@ export async function Shell({
               title={t(`nav.${n.key}`)}
               className={
                 active === n.key
-                  ? "text-ink"
+                  ? "text-[color:var(--color-accent)]"
                   : "text-[color:var(--color-ink-soft)] hover:text-ink"
               }
             >

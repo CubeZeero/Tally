@@ -38,6 +38,8 @@ export default async function SettingsPage() {
             username={user.username}
             currency={user.currency}
             discordWebhookUrl={user.discordWebhookUrl ?? ""}
+            notifyEmail={user.notifyEmail ?? ""}
+            notifyEmailEnabled={user.notifyEmailEnabled}
             notifyDaysBefore={user.notifyDaysBefore}
             notifyEnabled={user.notifyEnabled}
             notifyHour={user.notifyHour}

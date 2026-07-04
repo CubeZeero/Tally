@@ -20,11 +20,12 @@ Docker で簡単に起動できます。
 
 - マルチユーザー — アカウントごとにサブスク・カテゴリ・設定を個別管理
 - 月額 / 年額を自動集計（日 / 週 / 月 / 年・N周期ごと）
+- 無料トライアル管理 — 初回課金前にアラート
 - 多通貨対応 — メイン通貨へ自動換算
 - サービスアイコン（[simple-icons](https://www.npmjs.com/package/simple-icons)）や独自画像を設定
-- ダーク / ライトテーマ、多言語（English / 日本語）
-- Discord 通知（Embed）— 内蔵スケジューラーが毎日自動送信（cron 不要）
-- カレンダー表示、統計（高額ランキング・円グラフ・折れ線）
+- ユーザーごとの言語・テーマ（English / 日本語、ダーク / ライト）
+- 支払い予定の通知 — Discord（Embed）とメール、内蔵スケジューラーで毎日自動送信（cron 不要）
+- カレンダー表示、統計（高額ランキング・円グラフ・折れ線）、検索・フィルタ
 - カテゴリ・支払い方法を編集可能
 - CSV / JSON の書き出し・読み込み
 - セルフホスト — データはサーバー内の SQLite に保存
@@ -63,6 +64,7 @@ docker run -d \
 | `DATABASE_URL` | SQLite ファイルの場所 | `file:/data/tally.db`（Docker） |
 | `TZ` | 通知スケジューラーのタイムゾーン | `Asia/Tokyo` |
 | `DISABLE_REGISTRATION` | `1` で最初のアカウント作成後の新規登録を無効化 | （未設定） |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | メール通知用の SMTP 設定（任意） | （未設定） |
 | `PORT` | 待ち受けポート | `6400` |
 
 秘密情報は `docker-compose.yml` と同じ場所に置く git 管理外の `.env` で渡してください

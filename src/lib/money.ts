@@ -139,6 +139,19 @@ export function occurrencesInRange(
   return result;
 }
 
+/** True while a free trial is still running (today <= trialEndDate). */
+export function isInTrial(
+  trialEndDate: Date | string | null | undefined,
+  from: Date = new Date(),
+): boolean {
+  if (!trialEndDate) return false;
+  const t = new Date(trialEndDate);
+  t.setHours(0, 0, 0, 0);
+  const f = new Date(from);
+  f.setHours(0, 0, 0, 0);
+  return t.getTime() >= f.getTime();
+}
+
 export function daysUntil(date: Date, from: Date = new Date()): number {
   const a = new Date(date);
   a.setHours(0, 0, 0, 0);

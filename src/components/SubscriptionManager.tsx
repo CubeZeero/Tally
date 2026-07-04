@@ -22,6 +22,7 @@ import {
   daysUntil,
   effectiveNextBill,
   formatMoney,
+  isInTrial,
   monthlyCost,
 } from "@/lib/money";
 import { cycleLabel, fmtDate, relDays } from "@/lib/i18n";
@@ -38,6 +39,7 @@ export type Sub = {
   cycleCount: number;
   startDate: string;
   nextBillDate: string | null;
+  trialEndDate: string | null;
   category: string | null;
   paymentMethod: string | null;
   url: string | null;
@@ -104,6 +106,10 @@ export function SubscriptionManager({
   const [editing, setEditing] = useState<Sub | null>(null);
   const [open, setOpen] = useState(false);
   const [sort, setSort] = useState<SortKey>("next");
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "paused" | "trial"
+  >("all");
 
   useEffect(() => {
     if (openNew) {
@@ -144,6 +150,19 @@ export function SubscriptionManager({
     return arr;
   }, [subs, sort, mainCurrency, rates]);
 
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return sorted.filter((s) => {
+      if (statusFilter === "active" && !s.active) return false;
+      if (statusFilter === "paused" && s.active) return false;
+      if (statusFilter === "trial" && !isInTrial(s.trialEndDate)) return false;
+      if (!q) return true;
+      return [s.name, s.category, s.paymentMethod]
+        .filter(Boolean)
+        .some((v) => v!.toLowerCase().includes(q));
+    });
+  }, [sorted, query, statusFilter]);
+
   function startNew() {
     setEditing(null);
     setOpen(true);
@@ -167,11 +186,35 @@ export function SubscriptionManager({
             {t("subs.countTitle", { n: subs.length })}
           </h1>
         </div>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2">
+        <button className="btn" onClick={startNew}>
+          {t("subs.add")}
+        </button>
+      </div>
+
+      {subs.length > 0 && (
+        <div className="flex items-center gap-3 flex-wrap px-6 md:px-12 pb-5">
+          <input
+            className="field !py-1.5 flex-1 min-w-[160px] max-w-xs"
+            placeholder={t("subs.search")}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <select
+            className="field !py-1.5 w-auto"
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as typeof statusFilter)
+            }
+          >
+            <option value="all">{t("subs.filterAll")}</option>
+            <option value="active">{t("subs.filterActive")}</option>
+            <option value="paused">{t("subs.filterPaused")}</option>
+            <option value="trial">{t("subs.filterTrial")}</option>
+          </select>
+          <label className="flex items-center gap-2 ml-auto">
             <span className="label label-soft">{t("subs.sortBy")}</span>
             <select
-              className="field !py-1"
+              className="field !py-1.5 w-auto"
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
             >
@@ -182,11 +225,8 @@ export function SubscriptionManager({
               <option value="created">{t("sort.created")}</option>
             </select>
           </label>
-          <button className="btn" onClick={startNew}>
-            {t("subs.add")}
-          </button>
         </div>
-      </div>
+      )}
 
       {subs.length === 0 ? (
         <div className="px-6 md:px-12 py-16 text-center">
@@ -195,9 +235,15 @@ export function SubscriptionManager({
             {t("subs.addFirstOne")}
           </button>
         </div>
+      ) : visible.length === 0 ? (
+        <div className="px-6 md:px-12 py-16 text-center border-t border-[color:var(--color-line)]">
+          <p className="text-[color:var(--color-ink-soft)]">
+            {t("subs.noMatch")}
+          </p>
+        </div>
       ) : (
         <ul className="border-t border-[color:var(--color-line)]">
-          {sorted.map((s) => (
+          {visible.map((s) => (
             <Row
               key={s.id}
               s={s}
@@ -239,10 +285,12 @@ function Row({
   const [pending, start] = useTransition();
   const { lang, t } = useLang();
   const confirm = useConfirm();
-  const anchor = s.nextBillDate ? new Date(s.nextBillDate) : new Date(s.startDate);
+  const trial = isInTrial(s.trialEndDate);
+  const override = s.trialEndDate ?? s.nextBillDate;
+  const anchor = override ? new Date(override) : new Date(s.startDate);
   const next = effectiveNextBill(
     new Date(s.startDate),
-    s.nextBillDate ? new Date(s.nextBillDate) : null,
+    override ? new Date(override) : null,
     s.cycle as Cycle,
     s.cycleCount,
   );
@@ -276,6 +324,17 @@ function Row({
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <p className="font-medium truncate">{s.name}</p>
+          {trial && (
+            <span
+              className="shrink-0 label px-1.5 py-0.5 rounded"
+              style={{
+                color: "var(--color-accent)",
+                border: "1px solid var(--color-accent)",
+              }}
+            >
+              {t("subs.trial")}
+            </span>
+          )}
           {s.url && (
             <a
               href={s.url}
@@ -493,6 +552,9 @@ function SubscriptionDialog({
   const nextISO = sub?.nextBillDate
     ? new Date(sub.nextBillDate).toISOString().slice(0, 10)
     : "";
+  const trialISO = sub?.trialEndDate
+    ? new Date(sub.trialEndDate).toISOString().slice(0, 10)
+    : "";
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -619,6 +681,16 @@ function SubscriptionDialog({
             </Field>
           </div>
           <p className="label label-soft -mt-2">{t("dlg.nextHint")}</p>
+
+          <Field label={t("dlg.trialEnd")}>
+            <input
+              className="field"
+              name="trialEndDate"
+              type="date"
+              defaultValue={trialISO}
+            />
+          </Field>
+          <p className="label label-soft -mt-2">{t("dlg.trialHint")}</p>
 
           <div className="grid grid-cols-2 gap-5">
             <Field label={t("dlg.category")}>

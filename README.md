@@ -20,11 +20,12 @@ Access it from any web browser and run it with a single Docker command.
 
 - Multi-user — each account manages its own subscriptions, categories, and settings
 - Automatic monthly / yearly totals (day / week / month / year, every N cycles)
+- Free trial tracking with alerts before the first charge
 - Multi-currency with automatic conversion to your main currency
 - Service icons from [simple-icons](https://www.npmjs.com/package/simple-icons), or upload your own image
-- Dark / light theme and i18n (English / 日本語)
-- Discord notifications (embed) for upcoming payments — built-in daily scheduler, no cron needed
-- Calendar view and statistics (top costs, pie & line charts)
+- Per-user language & theme — English / 日本語, dark / light
+- Notifications for upcoming payments — Discord (embed) and email, built-in daily scheduler (no cron)
+- Calendar view, statistics (top costs, pie & line charts), search & filter
 - Editable categories & payment methods
 - CSV / JSON export & import
 - Self-hosted with Docker — data stays in SQLite on your server
@@ -63,6 +64,7 @@ docker run -d \
 | `DATABASE_URL` | SQLite file location | `file:/data/tally.db` (Docker) |
 | `TZ` | Timezone for the notification scheduler | `Asia/Tokyo` |
 | `DISABLE_REGISTRATION` | Set to `1` to block new sign-ups after the first account | (unset) |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Optional SMTP for email notifications | (unset) |
 | `PORT` | Listening port | `6400` |
 
 Provide secrets via a git-ignored `.env` file next to `docker-compose.yml` (do

@@ -8,6 +8,7 @@ import {
   daysUntil,
   effectiveNextBill,
   formatMoney,
+  isInTrial,
   monthlyCost,
 } from "@/lib/money";
 import { convert, ensureRates, parseRates } from "@/lib/rates";
@@ -44,6 +45,7 @@ export default async function DashboardPage() {
   let totalMonthly = 0;
   let unconvertible = 0;
   for (const s of active) {
+    if (isInTrial(s.trialEndDate)) continue; // free during trial
     const m = monthlyMain(s);
     if (m === null) unconvertible++;
     else totalMonthly += m;
@@ -55,7 +57,7 @@ export default async function DashboardPage() {
       ...s,
       next: effectiveNextBill(
         s.startDate,
-        s.nextBillDate,
+        s.trialEndDate ?? s.nextBillDate,
         s.cycle as Cycle,
         s.cycleCount,
       ),
@@ -65,6 +67,7 @@ export default async function DashboardPage() {
 
   const byCategory = new Map<string, number>();
   for (const s of active) {
+    if (isInTrial(s.trialEndDate)) continue;
     const m = monthlyMain(s);
     if (m === null) continue;
     const key = s.category || t("common.uncategorized");

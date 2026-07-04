@@ -61,6 +61,7 @@ export async function registrationAllowed(): Promise<boolean> {
 export async function createUser(
   username: string,
   password: string,
+  lang = "en",
 ): Promise<{ id: string } | { error: "taken" }> {
   const name = normalizeUsername(username);
   const existing = await prisma.user.findUnique({ where: { username: name } });
@@ -68,7 +69,9 @@ export async function createUser(
 
   const isFirst = (await prisma.user.count()) === 0;
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({ data: { username: name, passwordHash } });
+  const user = await prisma.user.create({
+    data: { username: name, passwordHash, lang },
+  });
 
   // The very first account claims any pre-multi-user (orphaned) data.
   if (isFirst) {
@@ -86,8 +89,18 @@ export async function createUser(
     });
   }
 
-  await seedUserDefaults(user.id);
+  await seedUserDefaults(user.id, lang);
   return { id: user.id };
+}
+
+/** Persist the UI language cookie (used to render server components). */
+export async function setLangCookie(lang: string) {
+  const store = await cookies();
+  store.set("tally_lang", lang === "ja" ? "ja" : "en", {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
 }
 
 export async function verifyLogin(

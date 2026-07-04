@@ -37,6 +37,7 @@ export default async function SubscriptionsPage({
     cycleCount: s.cycleCount,
     startDate: s.startDate.toISOString(),
     nextBillDate: s.nextBillDate ? s.nextBillDate.toISOString() : null,
+    trialEndDate: s.trialEndDate ? s.trialEndDate.toISOString() : null,
     category: s.category,
     paymentMethod: s.paymentMethod,
     url: s.url,

@@ -53,7 +53,7 @@ export default async function CalendarPage({
   const eventsByDay: Record<string, CalEvent[]> = {};
   let monthTotal = 0;
   for (const s of subs) {
-    const anchor = s.nextBillDate ?? s.startDate;
+    const anchor = s.trialEndDate ?? s.nextBillDate ?? s.startDate;
     const occ = occurrencesInRange(
       anchor,
       s.cycle as Cycle,

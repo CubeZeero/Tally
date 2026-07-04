@@ -19,10 +19,9 @@ async function tick() {
     const hour = now.getHours();
 
     const users = await prisma.user.findMany({
-      where: { notifyEnabled: true },
+      where: { OR: [{ notifyEnabled: true }, { notifyEmailEnabled: true }] },
     });
     for (const u of users) {
-      if (!u.discordWebhookUrl) continue;
       if (u.lastNotifiedOn === today) continue;
       if (hour < u.notifyHour) continue;
 

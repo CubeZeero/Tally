@@ -244,6 +244,28 @@ const ja: Dict = {
   "about.stack": "技術スタック",
   "about.toDashboard": "ダッシュボードへ",
 
+  // account / language
+  "auth.language": "言語",
+  // email notifications
+  "set.emailNotify": "メール通知",
+  "set.email": "通知先メールアドレス",
+  "set.emailEnabled": "支払い予定をメールでも通知する",
+  "set.smtpNote": "メール送信にはサーバー側の SMTP 設定（環境変数）が必要です。",
+  "set.err.badEmail": "メールアドレスの形式が正しくありません。",
+  // free trial
+  "dlg.trial": "無料トライアル",
+  "dlg.trialEnd": "トライアル終了日（初回課金日）",
+  "dlg.trialHint":
+    "設定すると、その日までは無料として合計から除外し、終了日を初回課金として計上・通知します。",
+  "subs.trial": "トライアル",
+  "subs.trialEndsPrefix": "無料期間 〜",
+  // search / filter
+  "subs.search": "検索",
+  "subs.filterAll": "すべて",
+  "subs.filterActive": "有効",
+  "subs.filterPaused": "停止中",
+  "subs.filterTrial": "トライアル",
+  "subs.noMatch": "該当するサブスクがありません。",
   // cycles
   "cycle.day": "日ごと",
   "cycle.week": "週ごと",
@@ -471,6 +493,24 @@ const en: Dict = {
   "about.stack": "Tech stack",
   "about.toDashboard": "Go to dashboard",
 
+  "auth.language": "Language",
+  "set.emailNotify": "Email notifications",
+  "set.email": "Notification email address",
+  "set.emailEnabled": "Also send upcoming payments by email",
+  "set.smtpNote": "Email delivery requires server-side SMTP configuration (env vars).",
+  "set.err.badEmail": "Invalid email address.",
+  "dlg.trial": "Free trial",
+  "dlg.trialEnd": "Trial end date (first charge)",
+  "dlg.trialHint":
+    "If set, it's excluded from totals as free until this date, then counted/notified as the first charge.",
+  "subs.trial": "Trial",
+  "subs.trialEndsPrefix": "Free until",
+  "subs.search": "Search",
+  "subs.filterAll": "All",
+  "subs.filterActive": "Active",
+  "subs.filterPaused": "Paused",
+  "subs.filterTrial": "Trial",
+  "subs.noMatch": "No matching subscriptions.",
   "cycle.day": "Daily",
   "cycle.week": "Weekly",
   "cycle.month": "Monthly",

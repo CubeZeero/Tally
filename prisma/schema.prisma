@@ -9,19 +9,22 @@ datasource db {
 
 // One account per user. Per-user settings live here too.
 model User {
-  id                String    @id @default(cuid())
-  username          String    @unique
-  passwordHash      String
-  currency          String    @default("JPY") // main display currency
-  discordWebhookUrl String?
-  notifyToken       String? // token for the optional /api/notify endpoint
-  notifyDaysBefore  Int       @default(3)
-  notifyEnabled     Boolean   @default(false) // built-in daily scheduler on/off
-  notifyHour        Int       @default(9) // hour of day (server local time) to send
-  lastNotifiedOn    String? // YYYY-MM-DD of the last auto notification (dedupe)
-  ratesJson         String? // JSON: { "USD": <units per 1 main>, ... }
-  ratesUpdatedAt    DateTime?
-  createdAt         DateTime  @default(now())
+  id                 String    @id @default(cuid())
+  username           String    @unique
+  passwordHash       String
+  lang               String    @default("en") // ui language: en | ja
+  currency           String    @default("JPY") // main display currency
+  discordWebhookUrl  String?
+  notifyEmail        String?
+  notifyEmailEnabled Boolean   @default(false)
+  notifyToken        String? // token for the optional /api/notify endpoint
+  notifyDaysBefore   Int       @default(3)
+  notifyEnabled      Boolean   @default(false) // built-in daily Discord scheduler on/off
+  notifyHour         Int       @default(9) // hour of day (server local time) to send
+  lastNotifiedOn     String? // YYYY-MM-DD of the last auto notification (dedupe)
+  ratesJson          String? // JSON: { "USD": <units per 1 main>, ... }
+  ratesUpdatedAt     DateTime?
+  createdAt          DateTime  @default(now())
 
   subscriptions  Subscription[]
   categories     Category[]
@@ -61,6 +64,7 @@ model Subscription {
   cycleCount    Int      @default(1) // every N units
   startDate     DateTime // first billing date
   nextBillDate  DateTime? // optional explicit next payment date (anchor)
+  trialEndDate  DateTime? // if set & in the future: free trial; first charge on this date
   category      String?
   paymentMethod String?
   url           String?

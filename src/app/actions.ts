@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { getUser, prisma } from "@/lib/db";
 import {
   anyUsers,
   createSession,
@@ -11,9 +11,11 @@ import {
   getSession,
   registrationAllowed,
   requireAuth,
+  setLangCookie,
   setUserPassword,
   verifyLogin,
 } from "@/lib/auth";
+import { normalizeLang } from "@/lib/i18n";
 import type { Cycle } from "@/lib/money";
 import { refreshRates } from "@/lib/rates";
 import { notifyUpcoming } from "@/lib/notify";
@@ -40,7 +42,8 @@ export async function register(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const t = getT(await getLang());
+  const lang = normalizeLang(String(formData.get("lang") ?? ""));
+  const t = getT(lang);
   if (!(await registrationAllowed())) {
     return { error: t("auth.err.registrationClosed") };
   }
@@ -52,10 +55,11 @@ export async function register(
   if (password.length < 8) return { error: t("auth.err.short") };
   if (password !== confirm) return { error: t("auth.err.mismatch") };
 
-  const result = await createUser(username, password);
+  const result = await createUser(username, password, lang);
   if ("error" in result) return { error: t("auth.err.taken") };
 
   await createSession(result.id);
+  await setLangCookie(lang);
   redirect("/");
 }
 
@@ -71,7 +75,17 @@ export async function login(
   if (!userId) return { error: getT(await getLang())("auth.err.wrongLogin") };
 
   await createSession(userId);
+  const user = await getUser(userId);
+  if (user) await setLangCookie(user.lang);
   redirect("/");
+}
+
+export async function updateLanguage(lang: string): Promise<void> {
+  const userId = await requireAuth();
+  const normalized = normalizeLang(lang);
+  await prisma.user.update({ where: { id: userId }, data: { lang: normalized } });
+  await setLangCookie(normalized);
+  revalidateAll();
 }
 
 export async function logout() {
@@ -93,6 +107,8 @@ export async function updateSettings(
   if (discordWebhookUrl && !isDiscordWebhook(discordWebhookUrl)) {
     return { error: getT(await getLang())("set.err.badWebhook") };
   }
+  const notifyEmail = String(formData.get("notifyEmail") ?? "").trim() || null;
+  const notifyEmailEnabled = formData.get("notifyEmailEnabled") === "true";
   const notifyDaysBefore = Math.max(
     0,
     parseInt(String(formData.get("notifyDaysBefore") ?? "3"), 10) || 0,
@@ -103,11 +119,23 @@ export async function updateSettings(
     Math.max(0, parseInt(String(formData.get("notifyHour") ?? "9"), 10) || 0),
   );
 
+  if (notifyEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(notifyEmail)) {
+    return { error: getT(await getLang())("set.err.badEmail") };
+  }
+
   const before = await prisma.user.findUnique({ where: { id: userId } });
 
   await prisma.user.update({
     where: { id: userId },
-    data: { currency, discordWebhookUrl, notifyDaysBefore, notifyEnabled, notifyHour },
+    data: {
+      currency,
+      discordWebhookUrl,
+      notifyEmail,
+      notifyEmailEnabled,
+      notifyDaysBefore,
+      notifyEnabled,
+      notifyHour,
+    },
   });
 
   const newPassword = String(formData.get("password") ?? "");
@@ -199,6 +227,8 @@ function parseSubscription(formData: FormData) {
   const startDate = startDateRaw ? new Date(startDateRaw) : new Date();
   const nextBillRaw = String(formData.get("nextBillDate") ?? "").trim();
   const nextBillDate = nextBillRaw ? new Date(nextBillRaw) : null;
+  const trialRaw = String(formData.get("trialEndDate") ?? "").trim();
+  const trialEndDate = trialRaw ? new Date(trialRaw) : null;
 
   return {
     name,
@@ -213,6 +243,7 @@ function parseSubscription(formData: FormData) {
     cycleCount,
     startDate,
     nextBillDate,
+    trialEndDate,
     description: String(formData.get("description") ?? "").trim() || null,
     category: String(formData.get("category") ?? "").trim() || null,
     paymentMethod: String(formData.get("paymentMethod") ?? "").trim() || null,

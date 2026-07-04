@@ -9,6 +9,7 @@ import {
   type Cycle,
   convert,
   formatMoney,
+  isInTrial,
   monthlyCost,
   occurrencesInRange,
 } from "@/lib/money";
@@ -37,7 +38,7 @@ export default async function StatsPage() {
       return {
         s,
         monthly:
-          converted === null
+          converted === null || isInTrial(s.trialEndDate)
             ? null
             : monthlyCost(converted, s.cycle as Cycle, s.cycleCount),
       };
@@ -82,7 +83,7 @@ export default async function StatsPage() {
   const windowEnd = new Date(now.getFullYear(), now.getMonth() + 12, 0, 23, 59, 59);
   const monthly12 = Array(12).fill(0);
   for (const s of active) {
-    const anchor = s.nextBillDate ?? s.startDate;
+    const anchor = s.trialEndDate ?? s.nextBillDate ?? s.startDate;
     const converted = convert(s.cost, s.currency, main, rates);
     if (converted === null) continue;
     for (const date of occurrencesInRange(

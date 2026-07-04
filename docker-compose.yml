@@ -16,6 +16,12 @@ services:
       TZ: "${TZ:-Asia/Tokyo}"
       # Set to 1 to block new sign-ups after the first account is created.
       DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-}"
+      # Optional SMTP for email notifications (leave unset to disable email).
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASS: "${SMTP_PASS:-}"
+      SMTP_FROM: "${SMTP_FROM:-}"
     volumes:
       - tally-data:/data
 

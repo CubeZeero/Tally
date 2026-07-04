@@ -2,8 +2,10 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Logo } from "./Logo";
 import { useLang } from "./LangProvider";
+import { LANGUAGES, LANGUAGE_LABELS, type Lang } from "@/lib/i18n";
 import type { ActionState } from "@/app/actions";
 
 type Action = (prev: ActionState, fd: FormData) => Promise<ActionState>;
@@ -15,13 +17,19 @@ export function AuthScreen({
   mode: "register" | "login";
   action: Action;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const router = useRouter();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     action,
     undefined,
   );
 
   const isRegister = mode === "register";
+
+  function changeLang(next: Lang) {
+    document.cookie = `tally_lang=${next}; path=/; max-age=31536000; samesite=lax`;
+    router.refresh();
+  }
   const titleLines = t(
     isRegister ? "auth.registerTitle" : "auth.loginTitle",
   ).split("\n");
@@ -88,6 +96,24 @@ export function AuthScreen({
                 placeholder="••••••••"
                 required
               />
+            </div>
+          )}
+
+          {isRegister && (
+            <div>
+              <label className="label label-soft">{t("auth.language")}</label>
+              <select
+                className="field"
+                name="lang"
+                value={lang}
+                onChange={(e) => changeLang(e.target.value as Lang)}
+              >
+                {LANGUAGES.map((l) => (
+                  <option key={l} value={l}>
+                    {LANGUAGE_LABELS[l]}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 

@@ -16,6 +16,8 @@ export function SettingsForm({
   username,
   currency,
   discordWebhookUrl,
+  notifyEmail,
+  notifyEmailEnabled,
   notifyDaysBefore,
   notifyEnabled,
   notifyHour,
@@ -24,6 +26,8 @@ export function SettingsForm({
   username: string;
   currency: string;
   discordWebhookUrl: string;
+  notifyEmail: string;
+  notifyEmailEnabled: boolean;
   notifyDaysBefore: number;
   notifyEnabled: boolean;
   notifyHour: number;
@@ -84,6 +88,28 @@ export function SettingsForm({
           />
           {t("set.notifyEnabled")}
         </label>
+
+        <label className="block">
+          <span className="label label-soft block mb-1">{t("set.email")}</span>
+          <input
+            className="field"
+            name="notifyEmail"
+            type="email"
+            defaultValue={notifyEmail}
+            placeholder="you@example.com"
+          />
+        </label>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="notifyEmailEnabled"
+            value="true"
+            defaultChecked={notifyEmailEnabled}
+          />
+          {t("set.emailEnabled")}
+        </label>
+        <span className="label label-soft block -mt-3">{t("set.smtpNote")}</span>
 
         <div className="grid grid-cols-2 gap-5">
           <label className="block">

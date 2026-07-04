@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { List, X, SignOut, User } from "@phosphor-icons/react/dist/ssr";
 import { ThemeToggle } from "./ThemeToggle";
+import { NavGlyph } from "./NavGlyph";
 import { useLang } from "./LangProvider";
 import { logout } from "@/app/actions";
 
@@ -11,7 +13,7 @@ export function MobileNav({
   active,
   username,
 }: {
-  items: { key: string; href: string; label: string; icon: string }[];
+  items: { key: string; href: string; label: string }[];
   active: string;
   username?: string;
 }) {
@@ -21,19 +23,8 @@ export function MobileNav({
   return (
     <div className="flex items-center gap-4">
       <ThemeToggle />
-      <button
-        aria-label="menu"
-        onClick={() => setOpen(true)}
-        className="text-ink"
-      >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M3 6h18M3 12h18M3 18h18"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </svg>
+      <button aria-label="menu" onClick={() => setOpen(true)} className="text-ink">
+        <List size={22} />
       </button>
 
       {open && (
@@ -48,27 +39,12 @@ export function MobileNav({
               onClick={() => setOpen(false)}
               aria-label="close"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M6 6l12 12M18 6L6 18"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <X size={22} />
             </button>
 
             {username && (
               <div className="mt-4 flex items-center gap-2 label label-soft">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 12a4 4 0 100-8 4 4 0 000 8zM5 20a7 7 0 0114 0"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <User size={14} />
                 {username}
               </div>
             )}
@@ -87,15 +63,7 @@ export function MobileNav({
                         : "var(--color-ink)",
                   }}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d={n.icon}
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <NavGlyph name={n.key} size={18} />
                   {n.label}
                 </Link>
               ))}
@@ -106,15 +74,7 @@ export function MobileNav({
                 type="submit"
                 className="label text-[color:var(--color-ink-soft)] hover:text-ink flex items-center gap-2"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M15 12H4m0 0l4-4m-4 4l4 4M14 4h5v16h-5"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <SignOut size={18} />
                 {t("nav.logout")}
               </button>
             </form>

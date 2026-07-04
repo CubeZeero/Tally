@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { SignOut, User } from "@phosphor-icons/react/dist/ssr";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { MobileNav } from "./MobileNav";
+import { NavGlyph } from "./NavGlyph";
 import { logout } from "@/app/actions";
 import { serverT } from "@/lib/server-lang";
 import { getSession } from "@/lib/auth";
@@ -15,27 +17,13 @@ export type NavKey =
   | "settings"
   | "about";
 
-function NavIcon({ d }: { d: string }) {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path
-        d={d}
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-const NAV: { key: NavKey; href: string; icon: string }[] = [
-  { key: "dashboard", href: "/", icon: "M4 13h7V4H4v9zm0 7h7v-5H4v5zm9 0h7v-9h-7v9zm0-16v5h7V4h-7z" },
-  { key: "subscriptions", href: "/subscriptions", icon: "M3 7h18M3 12h18M3 17h18" },
-  { key: "calendar", href: "/calendar", icon: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4" },
-  { key: "stats", href: "/stats", icon: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
-  { key: "settings", href: "/settings", icon: "M12 15a3 3 0 100-6 3 3 0 000 6zM4 12h2m12 0h2M12 4v2m0 12v2" },
-  { key: "about", href: "/about", icon: "M12 16v-5M12 8h.01M12 21a9 9 0 100-18 9 9 0 000 18z" },
+const NAV: { key: NavKey; href: string }[] = [
+  { key: "dashboard", href: "/" },
+  { key: "subscriptions", href: "/subscriptions" },
+  { key: "calendar", href: "/calendar" },
+  { key: "stats", href: "/stats" },
+  { key: "settings", href: "/settings" },
+  { key: "about", href: "/about" },
 ];
 
 export async function Shell({
@@ -70,7 +58,7 @@ export async function Shell({
                   : "text-[color:var(--color-ink-soft)] hover:text-ink"
               }
             >
-              <NavIcon d={n.icon} />
+              <NavGlyph name={n.key} size={20} />
             </Link>
           ))}
         </nav>
@@ -83,7 +71,7 @@ export async function Shell({
               className="text-[color:var(--color-ink-soft)] hover:text-ink"
               title={t("nav.logout")}
             >
-              <NavIcon d="M15 12H4m0 0l4-4m-4 4l4 4M14 4h5v16h-5" />
+              <SignOut size={20} />
             </button>
           </form>
         </div>
@@ -107,15 +95,7 @@ export async function Shell({
           <div className="ml-auto flex items-center gap-4">
             {username && (
               <span className="hidden xl:inline-flex items-center gap-1.5 label label-soft">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 12a4 4 0 100-8 4 4 0 000 8zM5 20a7 7 0 0114 0"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <User size={14} />
                 {username}
               </span>
             )}
@@ -127,7 +107,6 @@ export async function Shell({
                   key: n.key,
                   href: n.href,
                   label: t(`nav.${n.key}`),
-                  icon: n.icon,
                 }))}
               />
             </div>

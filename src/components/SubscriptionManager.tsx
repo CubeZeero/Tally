@@ -8,6 +8,7 @@ import {
   toggleSubscription,
   updateSubscription,
 } from "@/app/actions";
+import { ArrowSquareOut } from "@phosphor-icons/react/dist/ssr";
 import { SubIcon } from "./SubIcon";
 import { useConfirm } from "./ConfirmProvider";
 import { useLang } from "./LangProvider";
@@ -280,9 +281,9 @@ function Row({
               href={s.url}
               target="_blank"
               rel="noreferrer"
-              className="label label-soft hover:text-ink shrink-0"
+              className="label-soft hover:text-ink shrink-0 inline-flex"
             >
-              ↗
+              <ArrowSquareOut size={14} />
             </a>
           )}
         </div>

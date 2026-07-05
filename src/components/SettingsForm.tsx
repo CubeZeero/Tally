@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useActionState } from "react";
+import { CaretDown } from "@phosphor-icons/react/dist/ssr";
 import {
   updateSettings,
   refreshRatesAction,
@@ -34,6 +35,7 @@ export function SettingsForm({
   ratesUpdatedAt: string | null;
 }) {
   const { t, lang } = useLang();
+  const [notifyOpen, setNotifyOpen] = useState(false);
   const [state, action, pending] = useActionState<ActionState, FormData>(
     updateSettings,
     undefined,
@@ -66,83 +68,121 @@ export function SettingsForm({
           </span>
         </label>
 
-        <h2 className="label pt-2">{t("set.notify")}</h2>
-
-        <label className="block">
-          <span className="label label-soft block mb-1">{t("set.webhook")}</span>
-          <input
-            className="field"
-            name="discordWebhookUrl"
-            type="url"
-            defaultValue={discordWebhookUrl}
-            placeholder="https://discord.com/api/webhooks/..."
-          />
-        </label>
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="notifyEnabled"
-            value="true"
-            defaultChecked={notifyEnabled}
-          />
-          {t("set.notifyEnabled")}
-        </label>
-
-        <label className="block">
-          <span className="label label-soft block mb-1">{t("set.email")}</span>
-          <input
-            className="field"
-            name="notifyEmail"
-            type="email"
-            defaultValue={notifyEmail}
-            placeholder="you@example.com"
-          />
-        </label>
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="notifyEmailEnabled"
-            value="true"
-            defaultChecked={notifyEmailEnabled}
-          />
-          {t("set.emailEnabled")}
-        </label>
-        <span className="label label-soft block -mt-3">{t("set.smtpNote")}</span>
-
-        <div className="grid grid-cols-2 gap-5">
-          <label className="block">
-            <span className="label label-soft block mb-1">{t("set.sendTime")}</span>
-            <select className="field" name="notifyHour" defaultValue={notifyHour}>
-              {Array.from({ length: 24 }, (_, h) => (
-                <option key={h} value={h}>
-                  {String(h).padStart(2, "0")}:00
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="label label-soft block mb-1">
-              {t("set.daysBefore")}
-            </span>
-            <input
-              className="field"
-              name="notifyDaysBefore"
-              type="number"
-              min="0"
-              defaultValue={notifyDaysBefore}
+        {/* Notifications — collapsible */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setNotifyOpen((o) => !o)}
+            aria-expanded={notifyOpen}
+            className="label pt-2 flex items-center gap-2 w-full text-left hover:text-ink"
+          >
+            {t("set.notify")}
+            <CaretDown
+              size={14}
+              className="transition-transform duration-200"
+              style={{ transform: notifyOpen ? "rotate(180deg)" : "none" }}
             />
-          </label>
-        </div>
-        <span className="label label-soft block -mt-3">{t("set.tzHint")}</span>
+          </button>
 
-        <div className="pt-2">
-          <ActionButton
-            run={testDiscord}
-            label={t("set.testSend")}
-            okMessage={t("set.testSent")}
-          />
+          <div
+            className="grid transition-[grid-template-rows] duration-300 ease-out"
+            style={{ gridTemplateRows: notifyOpen ? "1fr" : "0fr" }}
+          >
+            <div className="overflow-hidden">
+              <div className="space-y-7 pt-5">
+                <label className="block">
+                  <span className="label label-soft block mb-1">
+                    {t("set.webhook")}
+                  </span>
+                  <input
+                    className="field"
+                    name="discordWebhookUrl"
+                    type="url"
+                    defaultValue={discordWebhookUrl}
+                    placeholder="https://discord.com/api/webhooks/..."
+                  />
+                </label>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="notifyEnabled"
+                    value="true"
+                    defaultChecked={notifyEnabled}
+                  />
+                  {t("set.notifyEnabled")}
+                </label>
+
+                <label className="block">
+                  <span className="label label-soft block mb-1">
+                    {t("set.email")}
+                  </span>
+                  <input
+                    className="field"
+                    name="notifyEmail"
+                    type="email"
+                    defaultValue={notifyEmail}
+                    placeholder="you@example.com"
+                  />
+                </label>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="notifyEmailEnabled"
+                    value="true"
+                    defaultChecked={notifyEmailEnabled}
+                  />
+                  {t("set.emailEnabled")}
+                </label>
+                <span className="label label-soft block -mt-3">
+                  {t("set.smtpNote")}
+                </span>
+
+                <div className="grid grid-cols-2 gap-5">
+                  <label className="block">
+                    <span className="label label-soft block mb-1">
+                      {t("set.sendTime")}
+                    </span>
+                    <select
+                      className="field"
+                      name="notifyHour"
+                      defaultValue={notifyHour}
+                    >
+                      {Array.from({ length: 24 }, (_, h) => (
+                        <option key={h} value={h}>
+                          {String(h).padStart(2, "0")}:00
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="label label-soft block mb-1">
+                      {t("set.daysBefore")}
+                    </span>
+                    <input
+                      className="field"
+                      name="notifyDaysBefore"
+                      type="number"
+                      min="0"
+                      defaultValue={notifyDaysBefore}
+                    />
+                  </label>
+                </div>
+                <span className="label label-soft block -mt-3">
+                  {t("set.tzHint")}
+                </span>
+
+                <div className="pt-2">
+                  <ActionButton
+                    run={testDiscord}
+                    label={t("set.testSend")}
+                    okMessage={t("set.testSent")}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <h2 className="label pt-2">{t("set.security")}</h2>

@@ -47,6 +47,9 @@ COPY --from=builder /app/.next/static ./.next/static
 # generated baseline SQL and the tiny startup script that applies it.
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+# nodemailer is loaded via runtime require (hidden from the bundler), so it is
+# not traced into standalone — copy it in explicitly (it has no dependencies).
+COPY --from=builder /app/node_modules/nodemailer ./node_modules/nodemailer
 COPY --from=builder /app/scripts/init-db.mjs ./init-db.mjs
 COPY --from=builder /app/scripts/init.sql ./init.sql
 

@@ -1,19 +1,36 @@
 import "server-only";
-import nodemailer from "nodemailer";
+import type NodemailerType from "nodemailer";
 
-let transporter: nodemailer.Transporter | null | undefined;
+// Load nodemailer via a runtime require hidden from the bundler, so its Node-only
+// deps (e.g. 'stream') are never pulled into the webpack graph (incl. instrumentation).
+function loadNodemailer(): typeof NodemailerType | null {
+  try {
+    const req = eval("require") as NodeRequire;
+    return req("nodemailer");
+  } catch {
+    return null;
+  }
+}
 
-function getTransporter() {
+type Transporter = ReturnType<typeof NodemailerType.createTransport>;
+let transporter: Transporter | null | undefined;
+
+function getTransporter(): Transporter | null {
   if (transporter !== undefined) return transporter;
   const host = process.env.SMTP_HOST;
   if (!host) {
     transporter = null;
     return null;
   }
+  const nm = loadNodemailer();
+  if (!nm) {
+    transporter = null;
+    return null;
+  }
   const port = parseInt(process.env.SMTP_PORT ?? "587", 10);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  transporter = nodemailer.createTransport({
+  transporter = nm.createTransport({
     host,
     port,
     secure: port === 465,

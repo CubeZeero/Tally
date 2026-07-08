@@ -242,9 +242,9 @@ function PieSection({
           </p>
         </div>
       ) : (
-        <div className="flex items-center gap-7">
+        <div className="card p-5 flex flex-col sm:flex-row items-center gap-6">
           <PieChart data={slices} />
-          <ul className="flex-1 space-y-2.5 min-w-0">
+          <ul className="w-full sm:flex-1 space-y-2.5 min-w-0">
             {slices.map((s) => {
               const pct = total > 0 ? (s.value / total) * 100 : 0;
               return (

@@ -135,12 +135,14 @@ export default async function DashboardPage() {
 
       {user?.monthlyBudget != null && (
         <section className="px-6 md:px-12 pt-8">
-          <BudgetBar
-            spent={totalMonthly}
-            budget={user.monthlyBudget}
-            main={main}
-            t={t}
-          />
+          <div className="card p-6">
+            <BudgetBar
+              spent={totalMonthly}
+              budget={user.monthlyBudget}
+              main={main}
+              t={t}
+            />
+          </div>
         </section>
       )}
 
@@ -191,7 +193,7 @@ export default async function DashboardPage() {
           {categories.length === 0 ? (
             <Empty t={t} />
           ) : (
-            <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="card p-6 flex flex-col sm:flex-row items-center gap-6">
               <div className="relative shrink-0">
                 <PieChart data={slices} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">

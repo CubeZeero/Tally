@@ -2,53 +2,74 @@
 icon: lucide/server
 ---
 
-# Self-hosting
+# セルフホスト
 
-## Updating
+## アップデート
 
-Tally applies additive schema migrations automatically on start, so your data is
-preserved across updates.
+Tally は起動時に追加的なスキーママイグレーションを自動適用するため、データは
+保持されたまま更新できます。
 
 ```bash
 git pull
 docker compose up -d --build
 ```
 
-## Backup
+## バックアップ
 
-Everything lives in one SQLite file:
+### 自動バックアップ
+
+Tally は SQLite の `VACUUM INTO` を使って**整合性のあるバックアップ**を定期的に
+作成します（既定で有効）。保存先はデータと同じボリューム内の `backups/`
+（例: `/data/backups/tally-YYYYMMDD-HHmmss.db`）で、古い世代は自動的に整理され
+ます。
+
+- 間隔・世代数・保存先は環境変数で調整（[設定](configuration.md) を参照）:
+  `BACKUP_ENABLED` / `BACKUP_INTERVAL_HOURS` / `BACKUP_KEEP` / `BACKUP_DIR`
+- **設定 → バックアップ**で状態を確認し、「今すぐバックアップ」を手動実行できます。
+
+バックアップはボリューム内にあるため、ボリュームごと（またはホストのバックアップ
+先へ）コピーして保全してください:
+
+```bash
+docker compose cp tally:/data/backups ./tally-backups
+```
+
+### 手動バックアップ / 復元
+
+すべては 1 つの SQLite ファイルに保存されています:
 
 ```bash
 docker compose cp tally:/data/tally.db ./tally-backup.db
 ```
 
-Restore by copying the file back into the volume and restarting. You can also use
-the in-app **CSV / JSON export** for a portable copy of your subscriptions.
+ファイルをボリュームに戻して再起動すれば復元できます。アプリ内の
+**CSV / JSON エクスポート**でも、サブスクの可搬コピーを取得できます。
 
-## Security checklist
+## セキュリティチェックリスト
 
-- [x] Set a strong, stable `SESSION_SECRET` (never commit it).
-- [x] Serve over HTTPS (reverse proxy or Tailscale). The session cookie is
-      marked `Secure` when the request arrives via `x-forwarded-proto: https`.
-- [x] After creating your account, set `DISABLE_REGISTRATION=1` to stop sign-ups.
-- [x] Discord webhook URLs are validated to `discord.com` (SSRF protection).
-- [x] Passwords are hashed with bcrypt; sessions are signed JWTs.
+- [x] 強く固定の `SESSION_SECRET` を設定する（コミットしない）。
+- [x] HTTPS で配信する（リバースプロキシまたは Tailscale）。リクエストが
+      `x-forwarded-proto: https` で届くとセッション Cookie に `Secure` が付与
+      されます。
+- [x] アカウント作成後、`DISABLE_REGISTRATION=1` で新規登録を止める。
+- [x] Discord Webhook URL は `discord.com` に限定（SSRF 対策）。
+- [x] パスワードは bcrypt でハッシュ化、セッションは署名付き JWT。
 
-!!! warning "Public exposure"
-    Registration is open by default so a fresh instance can be set up. If your
-    instance is reachable from the internet, lock it down with
-    `DISABLE_REGISTRATION=1` right after creating your account.
+!!! warning "インターネット公開時の注意"
+    初期セットアップができるよう、登録はデフォルトで開放されています。
+    インスタンスがインターネットから到達可能な場合は、自分のアカウントを作成
+    したらすぐに `DISABLE_REGISTRATION=1` でロックしてください。
 
-## Reset a forgotten password
+## パスワードを忘れた場合
 
-List users, or reset a password by clearing its hash (the user then sets a new
-one). Example — list usernames:
+ユーザー一覧を確認したり、ハッシュを消してパスワードをリセット（次回ログイン
+時に再設定）できます。例 — ユーザー名の一覧:
 
 ```bash
 docker compose exec -T tally node -e "const{PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.user.findMany().then(u=>{console.log(u.map(x=>x.username));return p.\$disconnect()})"
 ```
 
-## Timezone
+## タイムゾーン
 
-The notification send time uses the container timezone. Set `TZ` (default
-`Asia/Tokyo`) in `docker-compose.yml` or your `.env`.
+通知の送信時刻はコンテナのタイムゾーンを使用します。`docker-compose.yml` か
+`.env` で `TZ`（既定 `Asia/Tokyo`）を設定してください。

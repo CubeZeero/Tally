@@ -2,36 +2,40 @@
 icon: lucide/settings
 ---
 
-# Configuration
+# 設定
 
-Tally is configured with a few environment variables (for the server) and
-per-user options (in the app's Settings page).
+Tally は、いくつかの環境変数（サーバー側）と、アプリの設定画面で変更する
+ユーザーごとのオプションで構成します。
 
-## Environment variables
+## 環境変数
 
-| Variable | Description | Default |
+| 変数 | 説明 | 既定値 |
 | --- | --- | --- |
-| `SESSION_SECRET` | Signing key for session cookies. Use a long random string (`openssl rand -base64 32`). If unset, a random per-process secret is used and sessions reset on restart. | random per process |
-| `DATABASE_URL` | SQLite file location | `file:/data/tally.db` (Docker) |
-| `TZ` | Timezone for the notification scheduler | `Asia/Tokyo` |
-| `DISABLE_REGISTRATION` | Set to `1` to block new sign-ups after the first account | (unset) |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Optional SMTP for email notifications | (unset) |
-| `PORT` | Listening port | `6400` |
+| `SESSION_SECRET` | セッション Cookie の署名鍵。長いランダム文字列を設定（`openssl rand -base64 32`）。未設定の場合はプロセスごとにランダム生成され、再起動でセッションがリセットされます。 | プロセスごとにランダム |
+| `DATABASE_URL` | SQLite ファイルの場所 | `file:/data/tally.db`（Docker） |
+| `TZ` | 通知スケジューラーのタイムゾーン | `Asia/Tokyo` |
+| `DISABLE_REGISTRATION` | `1` で最初のアカウント作成後の新規登録を無効化 | （未設定） |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | メール通知用の SMTP 設定（**フォールバック**。ユーザーごとの設定が優先） | （未設定） |
+| `BACKUP_ENABLED` | 自動バックアップの有効／無効 | `true` |
+| `BACKUP_INTERVAL_HOURS` | 自動バックアップの間隔（時間） | `24` |
+| `BACKUP_KEEP` | 保持する世代数（超過分は古いものから削除） | `7` |
+| `BACKUP_DIR` | バックアップの保存先 | DB と同じボリューム内の `backups/` |
+| `PORT` | 待ち受けポート | `6400` |
 
-!!! warning "Always set SESSION_SECRET in production"
-    The repository is public, so a hardcoded fallback would be known to
-    everyone. If you leave it unset, Tally generates a random secret **per
-    process** — secure, but everyone is logged out on each restart. Set a
-    stable secret to keep sessions alive.
+!!! warning "本番では必ず SESSION_SECRET を設定"
+    リポジトリは公開されているため、ハードコードされたフォールバック値は誰でも
+    知り得ます。未設定のままだと Tally は**プロセスごと**にランダムな鍵を生成
+    します（安全ですが、再起動のたびに全員ログアウトされます）。セッションを
+    維持するには固定の鍵を設定してください。
 
-Provide secrets via a git-ignored `.env` file next to `docker-compose.yml`
-(do not commit real secrets):
+秘密情報は `docker-compose.yml` と同じ場所に置く git 管理外の `.env` で渡します
+（実際の秘密鍵はコミットしないこと）:
 
 ```bash
 echo "SESSION_SECRET=$(openssl rand -base64 32)" >> .env
 ```
 
-`docker-compose.yml` reads these via substitution, e.g.:
+`docker-compose.yml` はこれらを変数展開で読み込みます。例:
 
 ```yaml
 environment:
@@ -40,22 +44,31 @@ environment:
   DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-}"
 ```
 
-## Per-user settings (in the app)
+## ユーザーごとの設定（アプリ内）
 
-Open **Settings** in the app to configure:
+アプリの **設定** 画面で以下を変更できます:
 
-- **Language** — English / 日本語 (per user; also chosen at sign-up)
-- **Main currency** — other currencies are converted to this for totals
-- **Notifications** — Discord webhook, email, send time, days ahead (collapsible section)
-- **Categories & payment methods** — editable lists, seeded in your language
-- **Exchange rates** — refresh on demand
-- **Password** — change your account password
+- **言語** — 日本語 / English（ユーザーごと。サインアップ時にも選択）
+- **メイン通貨** — 他通貨はこの通貨に換算して集計
+- **月間予算** — ダッシュボードの予算バー・予算超過通知に使用
+- **通知** — Discord / メール（＋ユーザーごと SMTP）/ 汎用 Webhook / Slack /
+  ntfy、送信時刻・何日前（折りたたみセクション）
+- **iCal カレンダー連携** — フィード URL の発行・再生成・無効化
+- **バックアップ** — 状態確認と手動バックアップ
+- **カテゴリ・支払い方法** — 編集可能なリスト（選んだ言語で初期化）
+- **為替レート** — 手動更新
+- **パスワード** — アカウントのパスワード変更
 
-## Locking down a public instance
+!!! tip "保存し忘れ防止"
+    設定を保存せずに別ページへ移動しようとすると、保存するかどうか確認する
+    ダイアログが表示されます。
 
-If you expose Tally to the internet:
+## 公開インスタンスのロックダウン
 
-1. Set a strong `SESSION_SECRET`.
-2. Create your account, then set `DISABLE_REGISTRATION=1` and restart.
-3. Put it behind HTTPS (a reverse proxy or Tailscale). Tally marks the session
-   cookie `Secure` automatically when it sees `x-forwarded-proto: https`.
+Tally をインターネットに公開する場合:
+
+1. 強い `SESSION_SECRET` を設定する。
+2. 自分のアカウントを作成後、`DISABLE_REGISTRATION=1` を設定して再起動する。
+3. HTTPS の背後に置く（リバースプロキシまたは Tailscale）。Tally は
+   `x-forwarded-proto: https` を検知すると、自動でセッション Cookie に
+   `Secure` を付与します。

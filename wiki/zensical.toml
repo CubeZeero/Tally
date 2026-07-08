@@ -1,6 +1,6 @@
 [project]
 site_name = "Tally"
-site_description = "Documentation for Tally — a self-hostable subscription management dashboard."
+site_description = "Tally — セルフホスト可能なサブスクリプション管理ダッシュボードのドキュメント。"
 site_author = "CubeZeero"
 # Set this to your Cloudflare Pages URL (custom domain or *.pages.dev).
 site_url = "https://tally-wiki.pages.dev/"
@@ -14,18 +14,18 @@ repo_name = "CubeZeero/Tally"
 edit_uri = "edit/main/wiki/docs/"
 
 nav = [
-  { "Home" = "index.md" },
-  { "Getting started" = "getting-started.md" },
-  { "Configuration" = "configuration.md" },
-  { "Features" = "features.md" },
-  { "Notifications" = "notifications.md" },
-  { "Self-hosting" = "self-hosting.md" },
-  { "FAQ" = "faq.md" },
+  { "ホーム" = "index.md" },
+  { "はじめに" = "getting-started.md" },
+  { "設定" = "configuration.md" },
+  { "機能" = "features.md" },
+  { "通知" = "notifications.md" },
+  { "セルフホスト" = "self-hosting.md" },
+  { "よくある質問" = "faq.md" },
 ]
 
 # ----------------------------------------------------------------------------
 [project.theme]
-language = "en"
+language = "ja"
 logo = "assets/logo.svg"
 favicon = "assets/logo.svg"
 features = [

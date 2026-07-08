@@ -2,39 +2,39 @@
 icon: lucide/play
 ---
 
-# Getting started
+# はじめに
 
-Tally runs as a single Docker container. Data is stored in SQLite on a mounted
-volume, so it survives restarts and updates.
+Tally は単一の Docker コンテナとして動作します。データはマウントしたボリューム
+上の SQLite に保存されるため、再起動やアップデートをしても保持されます。
 
-## Prerequisites
+## 前提
 
-- [Docker](https://docs.docker.com/get-docker/) with the Compose plugin
-- A machine you control (a home server, VPS, or your own laptop)
+- [Docker](https://docs.docker.com/get-docker/)（Compose プラグイン付き）
+- 自分で管理できるマシン（自宅サーバー、VPS、または手元の PC）
 
-## Run with Docker Compose
+## Docker Compose で起動
 
 ```bash
-# 1. Clone the repository
+# 1. リポジトリを取得
 git clone https://github.com/CubeZeero/Tally.git
 cd Tally
 
-# 2. (Recommended) set a strong session secret in a git-ignored .env
+# 2. （推奨）git 管理外の .env に強いセッション鍵を設定
 echo "SESSION_SECRET=$(openssl rand -base64 32)" >> .env
 
-# 3. Build & start
+# 3. ビルド & 起動
 docker compose up -d --build
 ```
 
-Open <http://localhost:6400>. On first run you'll create an account
-(username + password). Your data is stored only on your server.
+<http://localhost:6400> を開きます。初回はアカウント（ユーザー名＋パスワード）を
+作成します。データはサーバー内にのみ保存されます。
 
-!!! tip "First account"
-    The first account you create claims any pre-existing data. After that, set
-    `DISABLE_REGISTRATION=1` if you want to stop further sign-ups. See
-    [Configuration](configuration.md).
+!!! tip "最初のアカウント"
+    最初に作成したアカウントが、既存データをすべて引き継ぎます。その後は、
+    追加登録を止めたい場合に `DISABLE_REGISTRATION=1` を設定します。詳しくは
+    [設定](configuration.md) を参照してください。
 
-## Run with `docker run`
+## `docker run` で起動
 
 ```bash
 docker build -t tally .
@@ -47,17 +47,11 @@ docker run -d \
   tally
 ```
 
-## What you get
+## 次のステップ
 
-```mermaid
-graph LR
-  U[Browser] -->|HTTP :6400| T[Tally container]
-  T --> DB[(SQLite /data)]
-  T -->|daily digest| D[Discord / Email]
-```
-
-## Next steps
-
-- Add your subscriptions from the dashboard
-- Set your **main currency** and, optionally, **notifications** in Settings
-- Read [Self-hosting](self-hosting.md) for updates, backups, and security
+- ダッシュボードからサブスクを追加
+- 設定で**メイン通貨**、必要なら**月間予算**や**通知**（Discord / メール /
+  Webhook / Slack / ntfy）を設定
+- **iCal 連携**で支払い日をカレンダーアプリに取り込み、ブラウザの
+  「ホーム画面に追加」で **PWA** としてインストール
+- 更新・バックアップ・セキュリティは [セルフホスト](self-hosting.md) を参照

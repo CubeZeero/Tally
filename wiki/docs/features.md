@@ -2,75 +2,108 @@
 icon: lucide/list
 ---
 
-# Features
+# 機能
 
-## Subscriptions
+## サブスクリプション
 
-Add each subscription with a name, cost, billing cycle, and start date. Tally
-computes the **next payment date**, **monthly** and **yearly** totals.
+各サブスクを、名前・料金・請求サイクル・開始日で登録します。Tally は
+**次回支払日**、**月額**、**年額**の合計を自動計算します。
 
-- Cycles: day / week / month / year, every _N_ cycles
-- Optional explicit **next payment date** override
-- **Service icons** from [simple-icons](https://simpleicons.org) (search by name)
-  or upload your own image
-- Accent color, category, payment method, URL, and notes
-- Pause/resume without deleting
+- サイクル: 日 / 週 / 月 / 年、N 周期ごと
+- 任意で**次回支払日**を明示指定して上書き可能
+- **サービスアイコン**は [simple-icons](https://simpleicons.org)（名前で検索）
+  から選択、または独自画像をアップロード
+- アクセントカラー、カテゴリ、支払い方法、URL、メモ
+- 削除せずに一時停止 / 再開
+- **複製** — 似た契約をワンタップでコピー
+- **解約検討リマインド** — 更新の指定日数前に「続けるか」を通知（サブスクごと）
 
-The list supports **search** (name / category / payment method), a **status
-filter** (all / active / paused / trial), and **sorting** (next payment,
-monthly high→low / low→high, name).
+一覧は**検索**（名前 / カテゴリ / 支払い方法）、**ステータスフィルタ**
+（すべて / 有効 / 停止中 / トライアル）、**並べ替え**（支払日が近い順、
+月額の高い順 / 安い順、名前）に対応します。スマホでは各行の操作
+（一時停止・編集・複製・削除）を **⋮ メニュー**にまとめて表示します。
 
-## Free trials
+## 無料トライアル
 
-Mark a subscription with a **trial end date**. While the trial is running it is:
+サブスクに**トライアル終了日**を設定できます。トライアル期間中は次のように
+扱われます:
 
-- excluded from monthly / yearly totals (it's free right now),
-- shown with a **Trial** badge,
-- treated so the **first charge = trial end date**, and you get an alert before
-  it converts.
+- 月額 / 年額の合計から除外（今は無料のため）
+- **トライアル**バッジを表示
+- **初回課金＝トライアル終了日**として扱い、有料化の前にアラート
 
-## Currencies & exchange rates
+## 通貨・為替レート
 
-Pick a **main currency** per user. Subscriptions in other currencies are
-converted automatically using rates from
-[open.er-api.com](https://open.er-api.com) (no API key), refreshed every 6 hours
-or on demand.
+ユーザーごとに**メイン通貨**を選択します。他通貨のサブスクは
+[open.er-api.com](https://open.er-api.com)（API キー不要）のレートで自動換算
+され、6 時間ごと、または手動で更新されます。
 
-## Dashboard, calendar & statistics
+## 月間予算
 
-=== "Dashboard"
+**設定 → 基本 → 月間予算**でメイン通貨の予算を設定できます。
 
-    This month's spend, active count, next payment, upcoming payments, and a
-    category donut.
+- ダッシュボードに**予算バー**を表示（超過時はオレンジで「◯◯ 超過」）
+- 予測の月間合計が予算を超えると、**通知に警告**を追加
 
-=== "Calendar"
+## iCal カレンダー連携
 
-    A month view of payment dates. Click a day to see that day's payments and
-    total.
+支払い日を **iCalendar フィード**として配信し、Google / Apple などのカレンダー
+アプリで購読できます。
 
-=== "Statistics"
+- **設定 → iCal カレンダー連携**で有効化すると、トークン付き URL
+  （`/api/calendar/<token>`）が発行されます
+- 定期イベント（サイクルに応じた繰り返し）＋**通知日数前のリマインダー**付き
+- URL の**再生成**（旧リンクを無効化）・**無効化**が可能
 
-    Monthly/yearly totals, average per subscription, most expensive, a 12-month
-    forecast line chart, and category / payment-method breakdowns.
+!!! warning "URL の取り扱い"
+    フィード URL を知っていれば誰でも閲覧できます。共有には注意してください。
 
-## Multi-user
+## PWA（ホーム画面に追加）
 
-Each account has its own subscriptions, categories, payment methods, and
-settings — fully isolated. The first account claims any pre-existing data;
-sign-ups can be locked afterwards with `DISABLE_REGISTRATION=1`.
+Tally は **PWA（プログレッシブ Web アプリ）**として、スマホやデスクトップに
+インストールできます（「ホーム画面に追加」）。アプリのように単独ウィンドウで
+起動し、簡易的なオフライン表示にも対応します。※プッシュ通知は使いません
+（通知は [通知チャンネル](notifications.md)経由）。
 
-## Internationalization & theme
+## 自動バックアップ
 
-- **Language** per user: English / 日本語 (chosen at sign-up, editable in settings)
-- **Dark / light** theme toggle
-- Default categories & payment methods are seeded in the chosen language
+SQLite データベースを定期的に安全にバックアップします。詳しくは
+[セルフホスト](self-hosting.md) を参照。
 
-## Import & export
+## ダッシュボード・カレンダー・統計
 
-Export all subscriptions as **CSV** or **JSON**, and import them back. Useful for
-backups and migrating between instances.
+=== "ダッシュボード"
 
-## Notifications
+    今月の支出、有効件数、次回支払い、支払い予定、カテゴリ別ドーナツ。
 
-Upcoming-payment digests via **Discord** (embed) and **email**, sent by a
-built-in daily scheduler — see [Notifications](notifications.md).
+=== "カレンダー"
+
+    支払い日の月表示。日をクリックすると、その日の支払いと合計を表示。
+
+=== "統計"
+
+    月額 / 年額合計、1 件あたり平均、最高額、今後 12 ヶ月の折れ線グラフ、
+    カテゴリ / 支払い方法別の内訳。
+
+## マルチユーザー
+
+アカウントごとにサブスク・カテゴリ・支払い方法・設定を保持し、完全に分離され
+ます。最初のアカウントが既存データを引き継ぎ、以降の登録は
+`DISABLE_REGISTRATION=1` でロックできます。
+
+## 多言語・テーマ
+
+- **言語**（ユーザーごと）: 日本語 / English（サインアップ時に選択、設定で変更可）
+- **ダーク / ライト**テーマ切替
+- デフォルトのカテゴリ・支払い方法は選んだ言語で初期化
+
+## インポート・エクスポート
+
+すべてのサブスクを **CSV** または **JSON** で書き出し・読み込みできます。
+バックアップや他インスタンスへの移行に便利です。
+
+## 通知
+
+支払い予定のダイジェストを、**Discord** ・ **メール** ・ **汎用 Webhook** ・
+**Slack** ・ **ntfy** に、内蔵の毎日スケジューラーが送信します（予算超過・解約
+検討アラートを含む）。詳しくは [通知](notifications.md) を参照。

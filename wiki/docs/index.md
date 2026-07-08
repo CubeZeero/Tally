@@ -4,41 +4,29 @@ icon: lucide/rocket
 
 # Tally
 
-**Tally** is a self-hostable subscription management dashboard. Track the
-subscriptions you pay for — their cost, billing cycle, renewal dates, and total
-monthly / yearly spend — all on a server you own. Access it from any web browser
-and run it with a single Docker command.
+**Tally** は、セルフホスト可能なサブスクリプション管理ダッシュボードです。
+契約中のサブスクの料金・請求サイクル・更新日・月額/年額の合計を、自分の
+サーバー上で一元管理できます。Web ブラウザからアクセスでき、Docker で簡単に
+起動できます。
 
-## Highlights
+## 主な特長
 
-- **Multi-user** — each account manages its own subscriptions, categories, and settings
-- **Free trial tracking** with alerts before the first charge
-- **Multi-currency** with automatic conversion to your main currency
-- **Notifications** for upcoming payments — Discord (embed) and email, built-in daily scheduler (no cron)
-- **Calendar** view, **statistics**, search & filter
-- **Per-user language & theme** — English / 日本語, dark / light
-- **Self-hosted** with Docker — data stays in SQLite on your server
+- **マルチユーザー** — アカウントごとにサブスク・カテゴリ・設定を個別管理
+- **無料トライアル管理** — 初回課金の前にアラート
+- **多通貨対応** — メイン通貨へ自動換算
+- **月間予算** — 予算バーと予算超過アラート
+- **通知** — 支払い予定を Discord / メール / 汎用 Webhook / Slack / ntfy に通知。内蔵スケジューラーで毎日自動送信（cron 不要）
+- **iCal 連携** — 支払い日をカレンダーアプリで購読
+- **カレンダー**表示、**統計**、検索・フィルタ、サブスクの複製
+- **ユーザーごとの言語・テーマ** — 日本語 / English、ダーク / ライト
+- **PWA** — スマホ / デスクトップにインストール可能
+- **セルフホスト** — データはサーバー内の SQLite にのみ保存、自動バックアップ付き
 
-## Quick links
+## クイックリンク
 
-- [Getting started](getting-started.md) — run Tally with Docker in a minute
-- [Configuration](configuration.md) — environment variables & settings
-- [Features](features.md) — everything Tally does
-- [Notifications](notifications.md) — Discord & email
-- [Self-hosting](self-hosting.md) — updates, backups, security
-- [FAQ](faq.md) — common questions
-
-!!! tip "Just want to try it?"
-
-    ```bash
-    git clone https://github.com/CubeZeero/Tally.git
-    cd Tally
-    docker compose up -d --build
-    ```
-
-    Then open <http://localhost:6400> and create your account.
-
-## Tech stack
-
-Next.js (App Router) · TypeScript · Prisma · SQLite · Tailwind CSS. Licensed
-under **AGPL-3.0**.
+- [はじめに](getting-started.md) — Docker で 1 分で起動
+- [設定](configuration.md) — 環境変数とアプリ内設定
+- [機能](features.md) — Tally でできること
+- [通知](notifications.md) — Discord / メール / Webhook / Slack / ntfy
+- [セルフホスト](self-hosting.md) — 更新・バックアップ・セキュリティ
+- [よくある質問](faq.md)

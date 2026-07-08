@@ -35,7 +35,8 @@ export async function Shell({
 }) {
   const { t } = await serverT();
   const userId = await getSession();
-  const username = userId ? (await getUser(userId))?.username ?? "" : "";
+  const u = userId ? await getUser(userId) : null;
+  const username = u ? u.displayName || u.username : "";
   return (
     <div className="min-h-screen flex">
       {/* Left rail */}
@@ -96,7 +97,7 @@ export async function Shell({
             {username && (
               <span className="hidden xl:inline-flex items-center gap-1.5 label label-soft">
                 <User size={14} />
-                {username}
+                <span style={{ textTransform: "none" }}>{username}</span>
               </span>
             )}
             <div className="xl:hidden">

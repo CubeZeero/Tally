@@ -41,6 +41,7 @@ export default async function SubscriptionsPage({
     category: s.category,
     paymentMethod: s.paymentMethod,
     url: s.url,
+    cancelReminderDays: s.cancelReminderDays,
     color: s.color,
     active: s.active,
   }));

@@ -45,7 +45,7 @@ export function MobileNav({
             {username && (
               <div className="mt-4 flex items-center gap-2 label label-soft">
                 <User size={14} />
-                {username}
+                <span style={{ textTransform: "none" }}>{username}</span>
               </div>
             )}
 

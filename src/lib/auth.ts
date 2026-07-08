@@ -70,7 +70,8 @@ export async function createUser(
   const isFirst = (await prisma.user.count()) === 0;
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { username: name, passwordHash, lang },
+    // username is normalized for lookups; displayName keeps the original case.
+    data: { username: name, displayName: username.trim(), passwordHash, lang },
   });
 
   // The very first account claims any pre-multi-user (orphaned) data.

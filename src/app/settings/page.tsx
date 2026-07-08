@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { requireAuth } from "@/lib/auth";
 import { getUser, prisma } from "@/lib/db";
 import { Shell } from "@/components/Shell";
@@ -5,6 +6,11 @@ import { SettingsForm } from "@/components/SettingsForm";
 import { ListManager } from "@/components/ListManager";
 import { DataManager } from "@/components/DataManager";
 import { serverT } from "@/lib/server-lang";
+import {
+  backupIntervalHours,
+  backupsEnabled,
+  listBackups,
+} from "@/lib/backup";
 import {
   addCategory,
   addPaymentMethod,
@@ -18,12 +24,34 @@ export default async function SettingsPage() {
   const userId = await requireAuth();
   const { t } = await serverT();
 
-  const [user, cats, pms] = await Promise.all([
+  const [user, cats, pms, backupList] = await Promise.all([
     getUser(userId),
     prisma.category.findMany({ where: { userId }, orderBy: { sort: "asc" } }),
     prisma.paymentMethod.findMany({ where: { userId }, orderBy: { sort: "asc" } }),
+    listBackups(),
   ]);
   if (!user) return null;
+
+  // Absolute origin for the iCal subscription URL.
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto")?.split(",")[0].trim() || "http";
+  const host = h.get("host") ?? "localhost:6400";
+  const icalUrl = user.icalToken
+    ? `${proto}://${host}/api/calendar/${user.icalToken}`
+    : null;
+
+  const latest = backupList[0]
+    ? new Date(backupList[0].mtime).toLocaleString(
+        user.lang === "en" ? "en-US" : "ja-JP",
+      )
+    : null;
+  const backups = {
+    enabled: backupsEnabled(),
+    keep: parseInt(process.env.BACKUP_KEEP ?? "7", 10) || 7,
+    intervalHours: backupIntervalHours(),
+    count: backupList.length,
+    latest,
+  };
 
   return (
     <Shell active="settings">
@@ -33,9 +61,9 @@ export default async function SettingsPage() {
           {t("set.title")}
         </h1>
 
-        <div className="grid lg:grid-cols-2 gap-14 max-w-5xl">
+        <div className="grid lg:grid-cols-2 gap-6 items-start max-w-5xl">
           <SettingsForm
-            username={user.username}
+            username={user.displayName || user.username}
             currency={user.currency}
             discordWebhookUrl={user.discordWebhookUrl ?? ""}
             notifyEmail={user.notifyEmail ?? ""}
@@ -43,23 +71,44 @@ export default async function SettingsPage() {
             notifyDaysBefore={user.notifyDaysBefore}
             notifyEnabled={user.notifyEnabled}
             notifyHour={user.notifyHour}
+            webhookUrl={user.webhookUrl ?? ""}
+            webhookEnabled={user.webhookEnabled}
+            slackWebhookUrl={user.slackWebhookUrl ?? ""}
+            slackEnabled={user.slackEnabled}
+            ntfyUrl={user.ntfyUrl ?? ""}
+            ntfyEnabled={user.ntfyEnabled}
+            hasNtfyToken={Boolean(user.ntfyToken)}
+            monthlyBudget={user.monthlyBudget}
+            smtpHost={user.smtpHost ?? ""}
+            smtpPort={user.smtpPort}
+            smtpUser={user.smtpUser ?? ""}
+            smtpFrom={user.smtpFrom ?? ""}
+            hasSmtpPass={Boolean(user.smtpPass)}
             ratesUpdatedAt={user.ratesUpdatedAt?.toISOString() ?? null}
+            icalUrl={icalUrl}
+            backups={backups}
           />
 
-          <div className="space-y-12">
-            <ListManager
-              title={t("set.categories")}
-              items={cats.map((c) => ({ id: c.id, name: c.name }))}
-              addAction={addCategory}
-              deleteAction={deleteCategory}
-            />
-            <ListManager
-              title={t("set.paymentMethods")}
-              items={pms.map((p) => ({ id: p.id, name: p.name }))}
-              addAction={addPaymentMethod}
-              deleteAction={deletePaymentMethod}
-            />
-            <DataManager />
+          <div className="space-y-6">
+            <section className="card p-6">
+              <ListManager
+                title={t("set.categories")}
+                items={cats.map((c) => ({ id: c.id, name: c.name }))}
+                addAction={addCategory}
+                deleteAction={deleteCategory}
+              />
+            </section>
+            <section className="card p-6">
+              <ListManager
+                title={t("set.paymentMethods")}
+                items={pms.map((p) => ({ id: p.id, name: p.name }))}
+                addAction={addPaymentMethod}
+                deleteAction={deletePaymentMethod}
+              />
+            </section>
+            <section className="card p-6">
+              <DataManager />
+            </section>
           </div>
         </div>
       </div>

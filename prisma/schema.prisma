@@ -10,13 +10,28 @@ datasource db {
 // One account per user. Per-user settings live here too.
 model User {
   id                 String    @id @default(cuid())
-  username           String    @unique
+  username           String    @unique // normalized (lowercased) — used for login/uniqueness
+  displayName        String? // original-case name for display (falls back to username)
   passwordHash       String
   lang               String    @default("en") // ui language: en | ja
   currency           String    @default("JPY") // main display currency
   discordWebhookUrl  String?
   notifyEmail        String?
   notifyEmailEnabled Boolean   @default(false)
+  webhookUrl         String? // generic webhook (Zapier / IFTTT / n8n …)
+  webhookEnabled     Boolean   @default(false)
+  slackWebhookUrl    String? // Slack incoming webhook
+  slackEnabled       Boolean   @default(false)
+  ntfyUrl            String? // full ntfy topic URL, e.g. https://ntfy.sh/my-topic
+  ntfyToken          String? // optional ntfy access token (Bearer)
+  ntfyEnabled        Boolean   @default(false)
+  icalToken          String? // token for the read-only iCal feed (null = off)
+  monthlyBudget      Float? // monthly budget in main currency (null = no budget)
+  smtpHost           String?
+  smtpPort           Int       @default(587)
+  smtpUser           String?
+  smtpPass           String?
+  smtpFrom           String?
   notifyToken        String? // token for the optional /api/notify endpoint
   notifyDaysBefore   Int       @default(3)
   notifyEnabled      Boolean   @default(false) // built-in daily Discord scheduler on/off
@@ -68,6 +83,7 @@ model Subscription {
   category      String?
   paymentMethod String?
   url           String?
+  cancelReminderDays Int? // remind this many days before renewal to decide (null = off)
   color         String   @default("#ff7a00")
   active        Boolean  @default(true)
   createdAt     DateTime @default(now())

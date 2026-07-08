@@ -8,6 +8,12 @@ data
 *.db
 *.db-journal
 
+# personal data exports (never commit)
+subscriptions.csv
+*.csv
+tally-export-*
+tally-backup*
+
 # generated at build time
 scripts/init.sql
 
@@ -20,6 +26,11 @@ scripts/init.sql
 *.log
 next-env.d.ts
 .tsbuildinfo
+
+# temp / editor autosave files
+*.tmp
+~*.tmp
+icons/~*
 
 # local editor settings
 .claude/settings.local.json

@@ -12,49 +12,58 @@ function loadNodemailer(): typeof NodemailerType | null {
   }
 }
 
-type Transporter = ReturnType<typeof NodemailerType.createTransport>;
-let transporter: Transporter | null | undefined;
+export type SmtpConfig = {
+  host: string | null;
+  port: number;
+  user: string | null;
+  pass: string | null;
+  from: string | null;
+};
 
-function getTransporter(): Transporter | null {
-  if (transporter !== undefined) return transporter;
-  const host = process.env.SMTP_HOST;
-  if (!host) {
-    transporter = null;
-    return null;
-  }
-  const nm = loadNodemailer();
-  if (!nm) {
-    transporter = null;
-    return null;
-  }
-  const port = parseInt(process.env.SMTP_PORT ?? "587", 10);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  transporter = nm.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: user ? { user, pass } : undefined,
-  });
-  return transporter;
+type UserSmtp = {
+  smtpHost?: string | null;
+  smtpPort?: number | null;
+  smtpUser?: string | null;
+  smtpPass?: string | null;
+  smtpFrom?: string | null;
+};
+
+/** Resolve effective SMTP config: per-user settings, falling back to env. */
+export function resolveSmtp(user: UserSmtp): SmtpConfig {
+  return {
+    host: user.smtpHost || process.env.SMTP_HOST || null,
+    port: user.smtpHost
+      ? user.smtpPort || 587
+      : parseInt(process.env.SMTP_PORT ?? "587", 10),
+    user: user.smtpHost ? user.smtpUser ?? null : process.env.SMTP_USER ?? null,
+    pass: user.smtpHost ? user.smtpPass ?? null : process.env.SMTP_PASS ?? null,
+    from: user.smtpHost ? user.smtpFrom ?? null : process.env.SMTP_FROM ?? null,
+  };
 }
 
-export function isMailConfigured(): boolean {
-  return Boolean(process.env.SMTP_HOST);
+export function isMailConfigured(cfg: SmtpConfig): boolean {
+  return Boolean(cfg.host);
 }
 
 export async function sendMail(
+  cfg: SmtpConfig,
   to: string,
   subject: string,
   text: string,
   html?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const tp = getTransporter();
-  if (!tp) return { ok: false, error: "SMTP not configured" };
-  const from =
-    process.env.SMTP_FROM || process.env.SMTP_USER || "tally@localhost";
+  if (!cfg.host) return { ok: false, error: "SMTP not configured" };
+  const nm = loadNodemailer();
+  if (!nm) return { ok: false, error: "mailer unavailable" };
+  const transporter = nm.createTransport({
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.port === 465,
+    auth: cfg.user ? { user: cfg.user, pass: cfg.pass ?? undefined } : undefined,
+  });
+  const from = cfg.from || cfg.user || "tally@localhost";
   try {
-    await tp.sendMail({ from, to, subject, text, html });
+    await transporter.sendMail({ from, to, subject, text, html });
     return { ok: true };
   } catch (e) {
     return { ok: false, error: String(e) };

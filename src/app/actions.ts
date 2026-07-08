@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getUser, prisma } from "@/lib/db";
+import { getUser, prisma, randomToken } from "@/lib/db";
+import { runBackup } from "@/lib/backup";
 import {
   anyUsers,
   createSession,
@@ -20,6 +21,7 @@ import type { Cycle } from "@/lib/money";
 import { refreshRates } from "@/lib/rates";
 import { notifyUpcoming } from "@/lib/notify";
 import { isDiscordWebhook } from "@/lib/discord";
+import { isHttpUrl, isSlackWebhook } from "@/lib/channels";
 import { parseImport } from "@/lib/data";
 import { getT } from "@/lib/i18n";
 import { getLang } from "@/lib/server-lang";
@@ -123,6 +125,41 @@ export async function updateSettings(
     return { error: getT(await getLang())("set.err.badEmail") };
   }
 
+  // Additional notification channels.
+  const webhookUrl = String(formData.get("webhookUrl") ?? "").trim() || null;
+  const webhookEnabled = formData.get("webhookEnabled") === "true";
+  if (webhookUrl && !isHttpUrl(webhookUrl)) {
+    return { error: getT(await getLang())("set.err.badUrl") };
+  }
+  const slackWebhookUrl =
+    String(formData.get("slackWebhookUrl") ?? "").trim() || null;
+  const slackEnabled = formData.get("slackEnabled") === "true";
+  if (slackWebhookUrl && !isSlackWebhook(slackWebhookUrl)) {
+    return { error: getT(await getLang())("set.err.badSlack") };
+  }
+  const ntfyUrl = String(formData.get("ntfyUrl") ?? "").trim() || null;
+  const ntfyEnabled = formData.get("ntfyEnabled") === "true";
+  if (ntfyUrl && !isHttpUrl(ntfyUrl)) {
+    return { error: getT(await getLang())("set.err.badUrl") };
+  }
+  const ntfyTokenInput = String(formData.get("ntfyToken") ?? "");
+
+  const budgetRaw = String(formData.get("monthlyBudget") ?? "").trim();
+  const monthlyBudget = budgetRaw
+    ? Math.max(0, parseFloat(budgetRaw) || 0)
+    : null;
+
+  // Per-user SMTP. The password is only updated when a new value is provided,
+  // so the stored one is never echoed back to the browser.
+  const smtpHost = String(formData.get("smtpHost") ?? "").trim() || null;
+  const smtpPort = Math.min(
+    65535,
+    Math.max(1, parseInt(String(formData.get("smtpPort") ?? "587"), 10) || 587),
+  );
+  const smtpUser = String(formData.get("smtpUser") ?? "").trim() || null;
+  const smtpFrom = String(formData.get("smtpFrom") ?? "").trim() || null;
+  const smtpPassInput = String(formData.get("smtpPass") ?? "");
+
   const before = await prisma.user.findUnique({ where: { id: userId } });
 
   await prisma.user.update({
@@ -135,6 +172,20 @@ export async function updateSettings(
       notifyDaysBefore,
       notifyEnabled,
       notifyHour,
+      webhookUrl,
+      webhookEnabled,
+      slackWebhookUrl,
+      slackEnabled,
+      ntfyUrl,
+      ntfyEnabled,
+      monthlyBudget,
+      smtpHost,
+      smtpPort,
+      smtpUser,
+      smtpFrom,
+      // keep existing secrets if the field was left blank
+      ...(smtpPassInput ? { smtpPass: smtpPassInput } : {}),
+      ...(ntfyTokenInput ? { ntfyToken: ntfyTokenInput } : {}),
     },
   });
 
@@ -165,6 +216,37 @@ export async function testDiscord(): Promise<ActionState> {
   const userId = await requireAuth();
   const result = await notifyUpcoming(userId);
   return result.ok ? { ok: true } : { error: `${result.error ?? result.status}` };
+}
+
+// ---- iCal feed -----------------------------------------------------------
+
+export async function generateIcalToken(): Promise<ActionState> {
+  const userId = await requireAuth();
+  await prisma.user.update({
+    where: { id: userId },
+    data: { icalToken: randomToken() },
+  });
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+export async function disableIcal(): Promise<ActionState> {
+  const userId = await requireAuth();
+  await prisma.user.update({
+    where: { id: userId },
+    data: { icalToken: null },
+  });
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+// ---- Backups -------------------------------------------------------------
+
+export async function backupNowAction(): Promise<ActionState> {
+  await requireAuth();
+  const res = await runBackup();
+  revalidatePath("/settings");
+  return res.ok ? { ok: true } : { error: res.error ?? "backup failed" };
 }
 
 // ---- Categories & payment methods ---------------------------------------
@@ -248,6 +330,12 @@ function parseSubscription(formData: FormData) {
     category: String(formData.get("category") ?? "").trim() || null,
     paymentMethod: String(formData.get("paymentMethod") ?? "").trim() || null,
     url: String(formData.get("url") ?? "").trim() || null,
+    cancelReminderDays: (() => {
+      const raw = String(formData.get("cancelReminderDays") ?? "").trim();
+      if (!raw) return null;
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    })(),
     color: String(formData.get("color") ?? "#ff7a00"),
     active: formData.get("active") === "true",
   };
@@ -272,6 +360,36 @@ export async function updateSubscription(id: string, formData: FormData) {
 export async function deleteSubscription(id: string) {
   const userId = await requireAuth();
   await prisma.subscription.deleteMany({ where: { id, userId } });
+  revalidateAll();
+}
+
+export async function duplicateSubscription(id: string) {
+  const userId = await requireAuth();
+  const s = await prisma.subscription.findFirst({ where: { id, userId } });
+  if (!s) return;
+  const suffix = getT(await getLang())("subs.copySuffix");
+  await prisma.subscription.create({
+    data: {
+      userId,
+      name: `${s.name}${suffix}`,
+      description: s.description,
+      cost: s.cost,
+      currency: s.currency,
+      icon: s.icon,
+      image: s.image,
+      cycle: s.cycle,
+      cycleCount: s.cycleCount,
+      startDate: s.startDate,
+      nextBillDate: s.nextBillDate,
+      trialEndDate: s.trialEndDate,
+      category: s.category,
+      paymentMethod: s.paymentMethod,
+      url: s.url,
+      cancelReminderDays: s.cancelReminderDays,
+      color: s.color,
+      active: s.active,
+    },
+  });
   revalidateAll();
 }
 

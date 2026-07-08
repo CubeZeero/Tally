@@ -133,6 +133,17 @@ export default async function DashboardPage() {
         />
       </section>
 
+      {user?.monthlyBudget != null && (
+        <section className="px-6 md:px-12 pt-8">
+          <BudgetBar
+            spent={totalMonthly}
+            budget={user.monthlyBudget}
+            main={main}
+            t={t}
+          />
+        </section>
+      )}
+
       <section className="px-6 md:px-12 py-10 grid lg:grid-cols-2 gap-8">
         <div>
           <div className="flex items-baseline justify-between mb-4">
@@ -235,6 +246,44 @@ function Stat({
         {value}
       </p>
       {sub && <p className="label label-soft mt-1 truncate">{sub}</p>}
+    </div>
+  );
+}
+
+function BudgetBar({
+  spent,
+  budget,
+  main,
+  t,
+}: {
+  spent: number;
+  budget: number;
+  main: string;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+}) {
+  const pct = budget > 0 ? (spent / budget) * 100 : 0;
+  const over = spent > budget;
+  const remaining = budget - spent;
+  const barColor = over ? "var(--color-accent)" : "var(--color-ink)";
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-2 gap-4">
+        <p className="label">{t("dash.budget")}</p>
+        <p className="label label-soft tabular-nums">
+          {formatMoney(spent, main)} / {formatMoney(budget, main)}
+        </p>
+      </div>
+      <div className="h-2.5 rounded-full bg-[color:var(--color-line)] overflow-hidden">
+        <div
+          className="h-full rounded-full transition-[width]"
+          style={{ width: `${Math.min(100, Math.max(0, pct))}%`, background: barColor }}
+        />
+      </div>
+      <p className="label label-soft mt-2 tabular-nums">
+        {over
+          ? t("dash.budgetOver", { amount: formatMoney(-remaining, main) })
+          : t("dash.budgetLeft", { amount: formatMoney(remaining, main) })}
+      </p>
     </div>
   );
 }

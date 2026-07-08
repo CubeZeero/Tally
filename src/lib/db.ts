@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 // Cross-runtime random token (works in both node and edge bundles).
-function randomToken(): string {
+export function randomToken(): string {
   return (
     globalThis.crypto.randomUUID().replace(/-/g, "") +
     globalThis.crypto.randomUUID().replace(/-/g, "")

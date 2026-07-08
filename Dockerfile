@@ -42,6 +42,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Next.js standalone server + static assets.
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+# public/ (PWA manifest icons, service worker) is not traced into standalone.
+COPY --from=builder /app/public ./public
 
 # Prisma client + query engine (only what the running app needs), plus the
 # generated baseline SQL and the tiny startup script that applies it.

@@ -69,9 +69,11 @@ export async function createUser(
 
   const isFirst = (await prisma.user.count()) === 0;
   const passwordHash = await bcrypt.hash(password, 10);
+  // Pick a sensible default main currency from the sign-up language.
+  const currency = lang === "en" ? "USD" : "JPY";
   const user = await prisma.user.create({
     // username is normalized for lookups; displayName keeps the original case.
-    data: { username: name, displayName: username.trim(), passwordHash, lang },
+    data: { username: name, displayName: username.trim(), passwordHash, lang, currency },
   });
 
   // The very first account claims any pre-multi-user (orphaned) data.

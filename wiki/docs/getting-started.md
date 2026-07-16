@@ -47,6 +47,7 @@ openssl rand -base64 32
 | `BACKUP_INTERVAL_HOURS` | 自動バックアップの間隔（時間） | `24` |
 | `BACKUP_KEEP` | 保持する世代数（超過分は古いものから削除） | `7` |
 | `BACKUP_DIR` | バックアップの保存先 | DB と同じボリューム内の `backups/` |
+| `UPDATE_CHECK` | 最新の GitHub タグと比較して「新バージョンあり」バナーを表示。`0` で無効化（api.github.com への定期アクセスを停止） | `1`（有効） |
 | `PORT` | 待ち受けポート | `6400` |
 
 !!! important "起動前に `SESSION_SECRET` を設定"

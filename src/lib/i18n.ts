@@ -238,6 +238,12 @@ const ja: Dict = {
   "about.desc":
     "セルフホスト可能なサブスクリプション管理ダッシュボード。契約中のサービスの料金・更新日・支出をひと目で把握できます。",
   "about.version": "バージョン {v}",
+  "about.updateAvailable": "v{latest} が利用可能",
+  "about.upToDate": "最新版です",
+  "update.available":
+    "新しいバージョン v{latest} が利用可能です（現在 v{current}）。",
+  "update.how": "更新方法",
+  "update.dismiss": "閉じる",
   "about.features": "主な機能",
   "about.status": "現在の状況",
   "about.registered": "登録サブスク",
@@ -562,6 +568,11 @@ const en: Dict = {
   "about.desc":
     "A self-hostable subscription manager. See your plans' cost, renewal dates, and spend at a glance.",
   "about.version": "Version {v}",
+  "about.updateAvailable": "v{latest} available",
+  "about.upToDate": "Up to date",
+  "update.available": "Version {latest} is available — you have {current}.",
+  "update.how": "How to update",
+  "update.dismiss": "Dismiss",
   "about.features": "Features",
   "about.status": "Current status",
   "about.registered": "Subscriptions",

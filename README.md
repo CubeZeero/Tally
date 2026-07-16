@@ -31,6 +31,7 @@ Access it from any web browser and run it with a single Docker command.
 - Subscription duplication, search, status filter, and sorting
 - Automatic SQLite backups (kept in the data volume)
 - Installable as a **PWA** ("Add to Home Screen"; no push)
+- Update notification — an in-app banner when a newer version is released on GitHub
 - Service icons from [simple-icons](https://www.npmjs.com/package/simple-icons), or upload your own image
 - Per-user language & theme — English / 日本語, dark / light
 - Calendar view, statistics (top costs, pie & line charts)
@@ -92,6 +93,7 @@ substitution; `.env` is git-ignored, so never commit real secrets.
 | `BACKUP_INTERVAL_HOURS` | Backup interval in hours | `24` |
 | `BACKUP_KEEP` | Number of backups to keep | `7` |
 | `BACKUP_DIR` | Backup destination | `backups/` in the data volume |
+| `UPDATE_CHECK` | Show an "update available" banner by comparing against the latest GitHub tag. Set to `0` to disable (stops the periodic api.github.com request) | `1` (on) |
 | `PORT` | Listening port | `6400` |
 
 ## Notifications

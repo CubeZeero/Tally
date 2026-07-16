@@ -1,14 +1,20 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { SignOut, User } from "@phosphor-icons/react/dist/ssr";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { MobileNav } from "./MobileNav";
 import { NavGlyph } from "./NavGlyph";
 import { PageFade } from "./PageFade";
+import { UpdateBanner } from "./UpdateBanner";
 import { logout } from "@/app/actions";
 import { serverT } from "@/lib/server-lang";
 import { getSession } from "@/lib/auth";
 import { getUser } from "@/lib/db";
+import { getUpdateInfo } from "@/lib/update";
+
+// Where the banner's "how to update" link points (wiki self-hosting page).
+const UPDATE_URL = "https://tally.cubezeero.com/self-hosting/";
 
 export type NavKey =
   | "dashboard"
@@ -38,6 +44,14 @@ export async function Shell({
   const userId = await getSession();
   const u = userId ? await getUser(userId) : null;
   const username = u ? u.displayName || u.username : "";
+
+  // Show an "update available" banner unless the user already dismissed this
+  // exact latest version.
+  const update = await getUpdateInfo();
+  const dismissed = (await cookies()).get("tally_update_seen")?.value;
+  const showUpdate =
+    update.updateAvailable && !!update.latest && dismissed !== update.latest;
+
   return (
     <div className="min-h-screen flex">
       {/* Left rail */}
@@ -81,6 +95,13 @@ export async function Shell({
 
       {/* Main column */}
       <div className="flex-1 min-w-0 flex flex-col">
+        {showUpdate && update.latest && (
+          <UpdateBanner
+            current={update.current}
+            latest={update.latest}
+            url={UPDATE_URL}
+          />
+        )}
         <header className="flex items-center gap-8 px-6 md:px-12 h-[84px] border-b border-[color:var(--color-line)]">
           <Logo />
           <nav className="hidden xl:flex items-center gap-8 ml-2">

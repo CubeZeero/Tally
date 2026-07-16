@@ -704,7 +704,7 @@ function SubscriptionDialog({
                 step="0.01"
                 min="0"
                 defaultValue={sub?.cost}
-                placeholder="1490"
+                placeholder={lang === "en" ? "9.99" : "1490"}
                 required
               />
             </Field>

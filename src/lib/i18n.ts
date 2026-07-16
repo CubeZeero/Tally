@@ -600,7 +600,7 @@ const en: Dict = {
   "dash.budgetLeft": "{amount} left",
   "dash.budgetOver": "{amount} over",
   "set.monthlyBudget": "Monthly budget",
-  "set.monthlyBudgetPh": "e.g. 20000",
+  "set.monthlyBudgetPh": "e.g. 200",
   "set.monthlyBudgetHint": "Adds a warning to notifications when the projected monthly total exceeds this. Blank to disable.",
   "set.animations": "Component animations",
   "set.pageFade": "Page-transition fade",

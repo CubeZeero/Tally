@@ -24,6 +24,7 @@ scripts/init.sql
 # misc
 .DS_Store
 *.log
+deploy_log/
 next-env.d.ts
 *.tsbuildinfo
 

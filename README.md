@@ -16,16 +16,24 @@ Tally helps you keep track of the subscriptions you pay for — their cost, bill
 cycle, renewal dates, and total monthly / yearly spend — all on a server you own.
 Access it from any web browser and run it with a single Docker command.
 
+📖 **Documentation:** [tally.cubezeero.com](https://tally.cubezeero.com/) — getting started, notifications, self-hosting, backups & FAQ (source in [`wiki/`](wiki/))
+
 ## Features
 
 - Multi-user — each account manages its own subscriptions, categories, and settings
 - Automatic monthly / yearly totals (day / week / month / year, every N cycles)
 - Free trial tracking with alerts before the first charge
 - Multi-currency with automatic conversion to your main currency
+- Monthly budget with a dashboard budget bar and over-budget alerts
+- Notifications for upcoming payments — **Discord**, **email**, **generic webhook**, **Slack**, **ntfy**; built-in daily scheduler (no cron)
+- iCal calendar feed — subscribe to payment dates in Google / Apple Calendar
+- Cancel-decision reminders — get nudged before a renewal to decide whether to keep it
+- Subscription duplication, search, status filter, and sorting
+- Automatic SQLite backups (kept in the data volume)
+- Installable as a **PWA** ("Add to Home Screen"; no push)
 - Service icons from [simple-icons](https://www.npmjs.com/package/simple-icons), or upload your own image
 - Per-user language & theme — English / 日本語, dark / light
-- Notifications for upcoming payments — Discord (embed) and email, built-in daily scheduler (no cron)
-- Calendar view, statistics (top costs, pie & line charts), search & filter
+- Calendar view, statistics (top costs, pie & line charts)
 - Editable categories & payment methods
 - CSV / JSON export & import
 - Self-hosted with Docker — data stays in SQLite on your server
@@ -33,15 +41,26 @@ Access it from any web browser and run it with a single Docker command.
 ## Quick start (Docker Compose)
 
 ```bash
-# 1. Set a strong SESSION_SECRET in docker-compose.yml (or generate one)
-openssl rand -base64 32
+# 1. Get the code (stable release)
+git clone -b stable https://github.com/CubeZeero/Tally.git
+cd Tally
 
-# 2. Build & start
+# 2. Create .env and edit it BEFORE the first launch
+cp .env.example .env
+#    → set SESSION_SECRET (generate one: openssl rand -base64 32)
+#    → optionally set TZ / DISABLE_REGISTRATION / BACKUP_*
+
+# 3. Build & start
 docker compose up -d --build
 ```
 
 Open <http://localhost:6400>. On first run you'll create an account (username +
 password). Your data is stored only on your server.
+
+> [!IMPORTANT]
+> Set `SESSION_SECRET` **before** the first `docker compose up`. Without it,
+> Tally uses a random per-process key and everyone is logged out on every
+> restart.
 
 ## Run with docker run
 
@@ -58,64 +77,50 @@ docker run -d \
 
 ## Environment variables
 
+Copy `.env.example` to `.env` and edit it. Docker Compose reads this file for
+substitution; `.env` is git-ignored, so never commit real secrets.
+
 | Variable | Description | Default |
 | --- | --- | --- |
 | `SESSION_SECRET` | Signing key for session cookies. Use a long random string (`openssl rand -base64 32`). If unset, a random per-process secret is used and sessions reset on restart. | (random per process) |
 | `DATABASE_URL` | SQLite file location | `file:/data/tally.db` (Docker) |
 | `TZ` | Timezone for the notification scheduler | `Asia/Tokyo` |
 | `DISABLE_REGISTRATION` | Set to `1` to block new sign-ups after the first account | (unset) |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Optional SMTP for email notifications | (unset) |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | SMTP for email notifications (fallback; per-user SMTP in Settings takes priority) | (unset) |
+| `BACKUP_ENABLED` | Enable automatic backups | `true` |
+| `BACKUP_INTERVAL_HOURS` | Backup interval in hours | `24` |
+| `BACKUP_KEEP` | Number of backups to keep | `7` |
+| `BACKUP_DIR` | Backup destination | `backups/` in the data volume |
 | `PORT` | Listening port | `6400` |
 
-Provide secrets via a git-ignored `.env` file next to `docker-compose.yml` (do
-not commit real secrets):
+## Notifications
 
-```bash
-echo "SESSION_SECRET=$(openssl rand -base64 32)" >> .env
-```
-
-## Discord notifications
-
-1. Create a webhook in your Discord channel settings.
-2. In Settings -> Notifications, paste the webhook URL, enable the daily
-   notification, and pick a send time and how many days ahead to notify.
-3. Use "Send test now" to verify.
-
-Tally's built-in scheduler sends upcoming payments once per day at the chosen
-time (in the container's timezone) — no cron required.
+Tally sends a daily digest of upcoming payments (plus trial-ending, over-budget,
+and cancel-review alerts) to any of **Discord**, **email (SMTP)**, **generic
+webhook**, **Slack**, and **ntfy** — all configured per-user in Settings →
+Notifications, and you can enable several at once. The built-in scheduler sends
+once per day at your chosen time (container timezone); no cron required. See the
+[notifications guide](https://tally.cubezeero.com/notifications/) for details.
 
 ## Currencies & rates
 
-Pick your main currency in Settings. Subscriptions in other currencies are
-converted automatically using rates from
+Pick your main currency in Settings. New accounts default to **USD** when signing
+up in English and **JPY** otherwise; you can change it anytime. Subscriptions in
+other currencies are converted automatically using rates from
 [open.er-api.com](https://open.er-api.com) (no API key), refreshed every 6 hours
 or on demand.
 
-## Backup
-
-The SQLite file holds everything:
-
-```bash
-docker compose cp tally:/data/tally.db ./tally-backup.db
-```
-
 ## Updating
 
-Tally applies additive schema migrations automatically on start, so your data is
-preserved across updates.
+Releases are tracked on the `stable` branch and version tags (e.g. `v1.0.0`).
+Additive schema migrations run automatically on start, so your data is preserved.
 
 ```bash
-git pull
+git pull                       # if you cloned -b stable
 docker compose up -d --build
 ```
 
-## Forgot password
-
-List users (usernames):
-
-```bash
-docker compose exec -T tally node -e "const{PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.user.findMany().then(u=>{console.log(u.map(x=>x.username));return p.\$disconnect()})"
-```
+Pin or roll back to a specific release with `git checkout v1.0.0`.
 
 ## Local development
 

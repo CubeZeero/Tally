@@ -3,7 +3,7 @@ site_name = "Tally"
 site_description = "Tally — セルフホスト可能なサブスクリプション管理ダッシュボードのドキュメント。"
 site_author = "CubeZeero"
 # Set this to your Cloudflare Pages URL (custom domain or *.pages.dev).
-site_url = "https://tally-wiki.pages.dev/"
+site_url = "https://tally.cubezeero.com/"
 copyright = """
 Copyright &copy; 2026 CubeZeero — Tally is licensed under AGPL-3.0
 """

@@ -7,12 +7,40 @@ icon: lucide/server
 ## アップデート
 
 Tally は起動時に追加的なスキーママイグレーションを自動適用するため、データは
-保持されたまま更新できます。
+保持されたまま更新できます。リリースは `stable` ブランチとバージョンタグ
+（`v1.0.0` など）で管理しています。
 
-```bash
-git pull
-docker compose up -d --build
-```
+=== "安定版を追う（推奨）"
+
+    検証済みの最新版を配信する `stable` ブランチを使います。
+
+    ```bash
+    # 初回
+    git clone -b stable https://github.com/CubeZeero/Tally.git
+    cd Tally
+    # 更新
+    git pull
+    docker compose up -d --build
+    ```
+
+=== "バージョンを固定"
+
+    特定リリースに固定、または以前の版へロールバックしたい場合はタグを使います。
+
+    ```bash
+    git fetch --tags
+    git checkout v1.0.0
+    docker compose up -d --build
+    ```
+
+=== "開発版（main）"
+
+    最新の開発中コードを試す場合（動作は保証されません）。
+
+    ```bash
+    git checkout main && git pull
+    docker compose up -d --build
+    ```
 
 ## バックアップ
 
@@ -23,7 +51,7 @@ Tally は SQLite の `VACUUM INTO` を使って**整合性のあるバックア�
 （例: `/data/backups/tally-YYYYMMDD-HHmmss.db`）で、古い世代は自動的に整理され
 ます。
 
-- 間隔・世代数・保存先は環境変数で調整（[設定](configuration.md) を参照）:
+- 間隔・世代数・保存先は環境変数で調整（[はじめに](getting-started.md) を参照）:
   `BACKUP_ENABLED` / `BACKUP_INTERVAL_HOURS` / `BACKUP_KEEP` / `BACKUP_DIR`
 - **設定 → バックアップ**で状態を確認し、「今すぐバックアップ」を手動実行できます。
 
@@ -52,7 +80,8 @@ docker compose cp tally:/data/tally.db ./tally-backup.db
       `x-forwarded-proto: https` で届くとセッション Cookie に `Secure` が付与
       されます。
 - [x] アカウント作成後、`DISABLE_REGISTRATION=1` で新規登録を止める。
-- [x] Discord Webhook URL は `discord.com` に限定（SSRF 対策）。
+- [x] 送信先 Webhook（Discord / 汎用 / ntfy）は任意ホストを許可 — URL は自分で
+      管理する（Slack のみ `hooks.slack.com` に限定）。
 - [x] パスワードは bcrypt でハッシュ化、セッションは署名付き JWT。
 
 !!! warning "インターネット公開時の注意"

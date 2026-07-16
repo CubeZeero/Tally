@@ -25,7 +25,7 @@ scripts/init.sql
 .DS_Store
 *.log
 next-env.d.ts
-.tsbuildinfo
+*.tsbuildinfo
 
 # temp / editor autosave files
 *.tmp

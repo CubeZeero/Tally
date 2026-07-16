@@ -4,6 +4,16 @@ Documentation site for Tally, built with [Zensical](https://zensical.org)
 (the static site generator from the Material for MkDocs team) and deployed to
 **Cloudflare Pages**.
 
+## Languages
+
+The site is bilingual. Each language is a separately-built site linked by the
+header language switcher:
+
+| Language | Docs | Config | Output | URL |
+| --- | --- | --- | --- | --- |
+| Japanese | `docs/` | `zensical.toml` | `site/` | `/` |
+| English | `docs-en/` | `zensical.en.toml` | `site/en/` | `/en/` |
+
 ## Local development
 
 ```bash
@@ -11,8 +21,13 @@ cd wiki
 python3 -m venv .venv && source .venv/bin/activate   # Python 3.10+
 pip install -r requirements.txt
 
-zensical serve    # preview at http://localhost:8000
-zensical build    # output static site to ./site
+# Japanese (default)
+zensical serve                        # preview at http://localhost:8000
+# English
+zensical serve -f zensical.en.toml    # preview the English site
+
+# Build both languages into ./site (ja) and ./site/en (en)
+zensical build && zensical build -f zensical.en.toml
 ```
 
 ## Deploy to Cloudflare Pages
@@ -28,7 +43,7 @@ Git**, pick the `CubeZeero/Tally` repo, then set:
 | Production branch | `main` |
 | Framework preset | None |
 | Root directory | `wiki` |
-| Build command | `pip install -r requirements.txt && zensical build` |
+| Build command | `pip install -r requirements.txt && zensical build && zensical build -f zensical.en.toml` |
 | Build output directory | `site` |
 | Environment variable | `PYTHON_VERSION` = `3.12` |
 
@@ -58,6 +73,6 @@ npx wrangler pages project create tally-wiki --production-branch main
 ```bash
 cd wiki
 pip install -r requirements.txt
-zensical build
+zensical build && zensical build -f zensical.en.toml
 npx wrangler pages deploy site --project-name tally-wiki
 ```

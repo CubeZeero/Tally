@@ -21,6 +21,7 @@ nav = [
   { "通知" = "notifications.md" },
   { "セルフホスト" = "self-hosting.md" },
   { "よくある質問" = "faq.md" },
+  { "変更履歴" = "changelog.md" },
 ]
 
 # ----------------------------------------------------------------------------
@@ -65,6 +66,18 @@ toggle.name = "Switch to light mode"
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
 link = "https://github.com/CubeZeero/Tally"
+
+# Language switcher (header). Each language is a separately-built site:
+# ja -> / (this config), en -> /en/ (zensical.en.toml).
+[[project.extra.alternate]]
+name = "日本語"
+link = "/"
+lang = "ja"
+
+[[project.extra.alternate]]
+name = "English"
+link = "/en/"
+lang = "en"
 
 # ----------------------------------------------------------------------------
 # Markdown extensions (defaults from the Zensical template).

@@ -13,6 +13,18 @@ Tally は**支払い予定**（およびトライアル終了・予算超過・�
 
 ## 仕組み
 
+```mermaid
+flowchart TD
+    A["内蔵スケジューラー<br/>（毎分チェック）"] -->|送信時刻に一致| B["近日中の支払いを収集<br/>（何日前まで）"]
+    B --> C["ダイジェスト生成<br/>＋予算警告・解約検討アラート"]
+    C --> D["有効な全チャンネルへ同時送信"]
+    D --> E1["Discord"]
+    D --> E2["メール"]
+    D --> E3["汎用 Webhook"]
+    D --> E4["Slack"]
+    D --> E5["ntfy"]
+```
+
 - スケジューラーは毎分チェックし、1 日 1 回、設定した**送信時刻**（コンテナの
   タイムゾーン基準）に、**何日前まで**の範囲で近日中の支払いを送信します。
 - 設定済みの**すべてのチャンネル**に同時に送信されます。
@@ -31,9 +43,11 @@ Tally は**支払い予定**（およびトライアル終了・予算超過・�
 3. 「毎日この時刻に支払い予定を自動で Discord 通知する」を ON。
 4. 「今すぐテスト送信」で動作確認（全チャンネルに送られます）。
 
-!!! note "本物の Discord Webhook のみ許可"
-    セキュリティ（SSRF 対策）のため、Webhook URL は
-    `https://discord.com/api/webhooks/...` の形式である必要があります。
+!!! note "Webhook URL は任意の http(s) を許可"
+    以前は `https://discord.com/api/webhooks/...` の形式に限定していましたが、
+    プロキシや Discord 互換エンドポイントも使えるよう、現在は**正しい http(s)
+    URL であれば**受け付けます（URL として壊れた文字列のみ拒否）。送信先はご自身で
+    管理してください。
 
 ## メール（SMTP）
 
@@ -52,9 +66,9 @@ Tally は**支払い予定**（およびトライアル終了・予算超過・�
 ```yaml
 environment:
   SMTP_HOST: "smtp.example.com"
-  SMTP_PORT: "587"        # 465 は暗黙的 TLS
+  SMTP_PORT: "587"        # 587 は STARTTLS、465 は暗黙的 TLS
   SMTP_USER: "you@example.com"
-  SMTP_PASS: "app-password"
+  SMTP_PASS: "app-password"   # 多くのプロバイダはアプリパスワードが必要
   SMTP_FROM: "Tally <you@example.com>"
 ```
 

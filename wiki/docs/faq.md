@@ -11,7 +11,7 @@ icon: lucide/circle-help
 ??? question "コンテナを再起動するたびにログアウトされます。"
     固定の `SESSION_SECRET` を設定していないため、Tally がプロセスごとに
     ランダムな鍵を使っています。`SESSION_SECRET` を設定してください（例:
-    `.env` ファイル）。詳しくは [設定](configuration.md)。
+    `.env` ファイル）。詳しくは [はじめに](getting-started.md)。
 
 ??? question "ログインはできるのに、画面を移動するとログイン画面に戻されます。"
     `Secure` 付き Cookie を HTTP でアクセスした場合に起こります。Tally は
@@ -23,11 +23,6 @@ icon: lucide/circle-help
     メールには SMTP 設定が必要です。**設定 → 通知 → メール通知**でユーザーごとに
     設定するか、サーバーの環境変数（`SMTP_HOST` など）をフォールバックとして
     使います。どちらも未設定だとメールはスキップされます。詳しくは
-    [通知](notifications.md)。
-
-??? question "Discord・メール以外の通知先はありますか？"
-    はい。**汎用 Webhook**（Zapier / IFTTT / n8n など）・**Slack**・**ntfy**
-    （スマホへプッシュ）に対応しています。複数を同時に有効化できます。詳しくは
     [通知](notifications.md)。
 
 ??? question "支払い日をカレンダーアプリで見られますか？"

@@ -36,7 +36,7 @@ Cloudflare rebuilds and deploys on every push. (A `.python-version` file is also
 included so the version is pinned.)
 
 After the first deploy, set `site_url` in `zensical.toml` to your Pages URL
-(e.g. `https://tally-wiki.pages.dev/`) so instant navigation/prefetch work.
+(e.g. `https://tally.cubezeero.com/`) so instant navigation/prefetch work.
 
 ### Option B — GitHub Actions
 

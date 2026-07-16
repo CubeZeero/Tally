@@ -2,6 +2,8 @@
 icon: lucide/rocket
 ---
 
+![top](assets/mocks_001.png)
+
 # Tally
 
 **Tally** は、セルフホスト可能なサブスクリプション管理ダッシュボードです。
@@ -19,13 +21,12 @@ icon: lucide/rocket
 - **iCal 連携** — 支払い日をカレンダーアプリで購読
 - **カレンダー**表示、**統計**、検索・フィルタ、サブスクの複製
 - **ユーザーごとの言語・テーマ** — 日本語 / English、ダーク / ライト
-- **PWA** — スマホ / デスクトップにインストール可能
 - **セルフホスト** — データはサーバー内の SQLite にのみ保存、自動バックアップ付き
 
 ## クイックリンク
 
-- [はじめに](getting-started.md) — Docker で 1 分で起動
-- [設定](configuration.md) — 環境変数とアプリ内設定
+- [はじめに](getting-started.md) — Docker で起動＋環境変数の設定
+- [設定](configuration.md) — アプリ内（ユーザーごと）の設定
 - [機能](features.md) — Tally でできること
 - [通知](notifications.md) — Discord / メール / Webhook / Slack / ntfy
 - [セルフホスト](self-hosting.md) — 更新・バックアップ・セキュリティ

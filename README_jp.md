@@ -16,16 +16,24 @@ Tally は、契約中のサブスクリプションの 料金・請求サイク�
 自分のサーバー上で管理できるダッシュボードです。Web ブラウザからアクセスでき、
 Docker で簡単に起動できます。
 
+📖 **ドキュメント:** [tally.cubezeero.com](https://tally.cubezeero.com/) — 導入・通知・セルフホスト・バックアップ・FAQ（ソースは [`wiki/`](wiki/)）
+
 ## 特長
 
 - マルチユーザー — アカウントごとにサブスク・カテゴリ・設定を個別管理
 - 月額 / 年額を自動集計（日 / 週 / 月 / 年・N周期ごと）
 - 無料トライアル管理 — 初回課金前にアラート
 - 多通貨対応 — メイン通貨へ自動換算
+- 月間予算 — ダッシュボードの予算バーと予算超過アラート
+- 支払い予定の通知 — **Discord**・**メール**・**汎用 Webhook**・**Slack**・**ntfy**、内蔵スケジューラーで毎日自動送信（cron 不要）
+- iCal カレンダー連携 — 支払い日を Google / Apple カレンダーで購読
+- 解約検討リマインド — 更新の指定日数前に「続けるか」を通知
+- サブスクの複製、検索、ステータスフィルタ、並べ替え
+- 自動 SQLite バックアップ（データボリューム内に保持）
+- **PWA** としてインストール可能（「ホーム画面に追加」、プッシュ通知なし）
 - サービスアイコン（[simple-icons](https://www.npmjs.com/package/simple-icons)）や独自画像を設定
 - ユーザーごとの言語・テーマ（English / 日本語、ダーク / ライト）
-- 支払い予定の通知 — Discord（Embed）とメール、内蔵スケジューラーで毎日自動送信（cron 不要）
-- カレンダー表示、統計（高額ランキング・円グラフ・折れ線）、検索・フィルタ
+- カレンダー表示、統計（高額ランキング・円グラフ・折れ線）
 - カテゴリ・支払い方法を編集可能
 - CSV / JSON の書き出し・読み込み
 - セルフホスト — データはサーバー内の SQLite に保存
@@ -33,15 +41,26 @@ Docker で簡単に起動できます。
 ## クイックスタート（Docker Compose）
 
 ```bash
-# 1. docker-compose.yml の SESSION_SECRET を安全な値に変更
-openssl rand -base64 32
+# 1. コードを取得（安定版）
+git clone -b stable https://github.com/CubeZeero/Tally.git
+cd Tally
 
-# 2. ビルド & 起動
+# 2. .env を作成し、起動前に編集する
+cp .env.example .env
+#    → SESSION_SECRET を設定（生成: openssl rand -base64 32）
+#    → 必要なら TZ / DISABLE_REGISTRATION / BACKUP_* も設定
+
+# 3. ビルド & 起動
 docker compose up -d --build
 ```
 
 <http://localhost:6400> を開きます。初回はアカウント（ユーザー名＋パスワード）を作成します。
 データはサーバー内にのみ保存されます。
+
+> [!IMPORTANT]
+> `SESSION_SECRET` は**最初の `docker compose up` より前に**設定してください。
+> 未設定だと Tally はプロセスごとにランダムな鍵を使い、再起動のたびに全員
+> ログアウトされます。
 
 ## docker run で起動
 
@@ -58,61 +77,49 @@ docker run -d \
 
 ## 環境変数
 
+`.env.example` を `.env` にコピーして編集します。Docker Compose がこのファイルを
+変数展開で読み込みます。`.env` は git 管理外なので、実際の秘密鍵はコミットしないこと。
+
 | 変数 | 説明 | 既定値 |
 | --- | --- | --- |
 | `SESSION_SECRET` | セッション Cookie の署名鍵。長いランダム文字列を設定（`openssl rand -base64 32`）。未設定時はプロセスごとにランダム生成され、再起動でセッションがリセットされます。 | （プロセスごとにランダム） |
 | `DATABASE_URL` | SQLite ファイルの場所 | `file:/data/tally.db`（Docker） |
 | `TZ` | 通知スケジューラーのタイムゾーン | `Asia/Tokyo` |
 | `DISABLE_REGISTRATION` | `1` で最初のアカウント作成後の新規登録を無効化 | （未設定） |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | メール通知用の SMTP 設定（任意） | （未設定） |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | メール通知用の SMTP 設定（フォールバック。ユーザーごとの設定が優先） | （未設定） |
+| `BACKUP_ENABLED` | 自動バックアップの有効／無効 | `true` |
+| `BACKUP_INTERVAL_HOURS` | 自動バックアップの間隔（時間） | `24` |
+| `BACKUP_KEEP` | 保持する世代数 | `7` |
+| `BACKUP_DIR` | バックアップの保存先 | データボリューム内の `backups/` |
 | `PORT` | 待ち受けポート | `6400` |
 
-秘密情報は `docker-compose.yml` と同じ場所に置く git 管理外の `.env` で渡してください
-（実際の秘密鍵はコミットしないこと）:
+## 通知
 
-```bash
-echo "SESSION_SECRET=$(openssl rand -base64 32)" >> .env
-```
-
-## Discord 通知
-
-1. Discord チャンネル設定で Webhook を発行
-2. 設定 -> 通知 に Webhook URL を入力し、自動通知を ON、送信時刻と「何日前まで」を設定
-3. 「今すぐテスト送信」で確認
-
-内蔵スケジューラーが、指定時刻（コンテナのタイムゾーン基準）に毎日1回、近日中の支払いを
-送信します。cron の設定は不要です。
+支払い予定のダイジェスト（トライアル終了・予算超過・解約検討アラートを含む）を、
+**Discord**・**メール（SMTP）**・**汎用 Webhook**・**Slack**・**ntfy** に毎日送信
+できます。すべてユーザーごとに設定でき、複数を同時に有効化できます。内蔵スケジュー
+ラーが指定時刻（コンテナのタイムゾーン基準）に毎日1回送信するため、cron は不要です。
+詳しくは [通知ガイド](https://tally.cubezeero.com/notifications/) を参照してください。
 
 ## 通貨・為替レート
 
-設定でメイン通貨を選びます。他通貨のサブスクは
+設定でメイン通貨を選びます。新規アカウントはサインアップ言語から初期値を推定し
+（English → **USD** / 日本語 → **JPY**）、いつでも変更できます。他通貨のサブスクは
 [open.er-api.com](https://open.er-api.com)（APIキー不要）のレートで自動換算され、
 6時間ごと、または手動で更新されます。
 
-## バックアップ
-
-SQLite ファイルにすべて保存されています。
-
-```bash
-docker compose cp tally:/data/tally.db ./tally-backup.db
-```
-
 ## アップデート
 
-起動時に追加的スキーママイグレーションを自動適用するため、データは保持されたまま更新できます。
+リリースは `stable` ブランチとバージョンタグ（例: `v1.0.0`）で管理しています。
+起動時に追加的スキーママイグレーションを自動適用するため、データは保持されたまま
+更新できます。
 
 ```bash
-git pull
+git pull                       # -b stable で clone した場合
 docker compose up -d --build
 ```
 
-## パスワードを忘れた場合
-
-ユーザー一覧（ユーザー名）を確認できます。
-
-```bash
-docker compose exec -T tally node -e "const{PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.user.findMany().then(u=>{console.log(u.map(x=>x.username));return p.\$disconnect()})"
-```
+特定リリースへの固定・ロールバックは `git checkout v1.0.0`。
 
 ## ローカル開発
 

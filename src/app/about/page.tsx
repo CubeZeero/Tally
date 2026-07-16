@@ -4,13 +4,15 @@ import { prisma } from "@/lib/db";
 import { Shell } from "@/components/Shell";
 import { Logo } from "@/components/Logo";
 import { serverT } from "@/lib/server-lang";
+import { APP_VERSION } from "@/lib/version";
+import { getUpdateInfo } from "@/lib/update";
 
 export const dynamic = "force-dynamic";
 
-const VERSION = "0.4.0";
 const REPO = "https://github.com/CubeZeero/Tally";
 const LICENSE_URL = `${REPO}/blob/main/LICENSE`;
 const HOMEPAGE = "https://tally.cubezeero.com";
+const UPDATE_URL = `${HOMEPAGE}/self-hosting/`;
 const DEVELOPER = "CubeZeero";
 
 const CREDITS: { name: string; license: string; url: string }[] = [
@@ -28,9 +30,10 @@ const CREDITS: { name: string; license: string; url: string }[] = [
 export default async function AboutPage() {
   const userId = await requireAuth();
   const { t } = await serverT();
-  const [subs, active] = await Promise.all([
+  const [subs, active, update] = await Promise.all([
     prisma.subscription.count({ where: { userId } }),
     prisma.subscription.count({ where: { userId, active: true } }),
+    getUpdateInfo(),
   ]);
 
   return (
@@ -49,7 +52,23 @@ export default async function AboutPage() {
             {t("about.desc")}
           </p>
           <p className="label label-soft mt-4">
-            {t("about.version", { v: VERSION })}
+            {t("about.version", { v: APP_VERSION })}
+            {update.latest &&
+              (update.updateAvailable ? (
+                <>
+                  {" · "}
+                  <a
+                    href={UPDATE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[color:var(--color-accent)] hover:underline"
+                  >
+                    {t("about.updateAvailable", { latest: update.latest })}
+                  </a>
+                </>
+              ) : (
+                <span> · {t("about.upToDate")}</span>
+              ))}
           </p>
         </div>
       </section>

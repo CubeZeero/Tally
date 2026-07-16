@@ -284,6 +284,8 @@ const ja: Dict = {
   "set.monthlyBudget": "月間予算",
   "set.monthlyBudgetPh": "例: 20000",
   "set.monthlyBudgetHint": "予測の月間合計がこの額を超えると通知に警告を追加します。空欄で無効。",
+  "set.animations": "コンポーネントアニメーション",
+  "set.pageFade": "ページ遷移フェード",
   // iCal feed
   "set.ical": "iCal カレンダー連携",
   "set.icalNote":
@@ -600,6 +602,8 @@ const en: Dict = {
   "set.monthlyBudget": "Monthly budget",
   "set.monthlyBudgetPh": "e.g. 20000",
   "set.monthlyBudgetHint": "Adds a warning to notifications when the projected monthly total exceeds this. Blank to disable.",
+  "set.animations": "Component animations",
+  "set.pageFade": "Page-transition fade",
   "set.ical": "iCal calendar feed",
   "set.icalNote": "Subscribe to this URL in any calendar app to see your payment dates. Anyone with the URL can read it, so keep it private.",
   "set.icalEnable": "Enable iCal",

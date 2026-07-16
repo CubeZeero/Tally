@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { requireAuth } from "@/lib/auth";
 import { getUser, prisma } from "@/lib/db";
 import { Shell } from "@/components/Shell";
@@ -31,6 +31,11 @@ export default async function SettingsPage() {
     listBackups(),
   ]);
   if (!user) return null;
+
+  // Animations / page fade default on; each toggle stores its choice in a cookie.
+  const cookieStore = await cookies();
+  const animEnabled = cookieStore.get("tally_anim")?.value !== "off";
+  const fadeEnabled = cookieStore.get("tally_fade")?.value !== "off";
 
   // Absolute origin for the iCal subscription URL.
   const h = await headers();
@@ -87,6 +92,8 @@ export default async function SettingsPage() {
             ratesUpdatedAt={user.ratesUpdatedAt?.toISOString() ?? null}
             icalUrl={icalUrl}
             backups={backups}
+            animEnabled={animEnabled}
+            fadeEnabled={fadeEnabled}
           />
 
           <div className="space-y-6">

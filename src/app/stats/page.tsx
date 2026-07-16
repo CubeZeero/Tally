@@ -1,8 +1,10 @@
 import { requireAuth } from "@/lib/auth";
 import { getUser, prisma } from "@/lib/db";
 import { Shell } from "@/components/Shell";
+import type { ReactNode } from "react";
 import { PieChart } from "@/components/PieChart";
 import { LineChart } from "@/components/LineChart";
+import { CountUp } from "@/components/CountUp";
 import { SubIcon } from "@/components/SubIcon";
 import { colorAt } from "@/lib/colors";
 import {
@@ -120,16 +122,28 @@ export default async function StatsPage() {
 
         {/* Key figures */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-[color:var(--color-line)] border-y border-[color:var(--color-line)]">
-          <Figure label={t("stats.avgMonthly")} value={formatMoney(totalMonthly, main)} />
-          <Figure label={t("stats.yearly")} value={formatMoney(totalYearly, main)} />
+          <Figure
+            label={t("stats.avgMonthly")}
+            value={<CountUp value={totalMonthly} currency={main} />}
+          />
+          <Figure
+            label={t("stats.yearly")}
+            value={<CountUp value={totalYearly} currency={main} />}
+          />
           <Figure
             label={t("stats.perItem")}
-            value={formatMoney(avgMonthly, main)}
+            value={<CountUp value={avgMonthly} currency={main} />}
             sub={t("stats.itemsN", { n: withMonthly.length })}
           />
           <Figure
             label={t("stats.max")}
-            value={mostExpensive ? formatMoney(mostExpensive.monthly, main) : "—"}
+            value={
+              mostExpensive ? (
+                <CountUp value={mostExpensive.monthly} currency={main} />
+              ) : (
+                "—"
+              )
+            }
             sub={mostExpensive?.s.name}
           />
         </div>
@@ -205,7 +219,7 @@ function Figure({
   sub,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   sub?: string;
 }) {
   return (

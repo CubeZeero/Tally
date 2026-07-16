@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 export type Slice = { label: string; value: number; color: string };
 
 function polar(cx: number, cy: number, r: number, frac: number) {
@@ -36,6 +38,7 @@ export function PieChart({
       return {
         d: `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${end - start >= 0.9999 ? ex : x2} ${end - start >= 0.9999 ? ey : y2}`,
         color: d.color,
+        len: (end - start) * 2 * Math.PI * r, // arc length for the draw-in animation
       };
     });
 
@@ -53,11 +56,19 @@ export function PieChart({
         arcs.map((a, i) => (
           <path
             key={i}
+            className="anim-pie-arc"
             d={a.d}
             fill="none"
             stroke={a.color}
             strokeWidth={thickness}
             strokeLinecap="butt"
+            style={
+              {
+                "--len": a.len,
+                strokeDasharray: a.len,
+                animationDelay: `${i * 0.09}s`,
+              } as CSSProperties
+            }
           />
         ))}
     </svg>

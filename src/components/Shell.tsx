@@ -4,6 +4,7 @@ import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { MobileNav } from "./MobileNav";
 import { NavGlyph } from "./NavGlyph";
+import { PageFade } from "./PageFade";
 import { logout } from "@/app/actions";
 import { serverT } from "@/lib/server-lang";
 import { getSession } from "@/lib/auth";
@@ -114,7 +115,9 @@ export async function Shell({
           </div>
         </header>
 
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          <PageFade>{children}</PageFade>
+        </main>
       </div>
     </div>
   );

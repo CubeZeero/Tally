@@ -25,6 +25,8 @@ import {
 import { CURRENCIES } from "@/lib/money";
 import { useLang } from "./LangProvider";
 import { LangSwitcher } from "./LangSwitcher";
+import { CookieSwitch } from "./CookieSwitch";
+import { Switch } from "./Switch";
 
 export function SettingsForm({
   username,
@@ -51,6 +53,8 @@ export function SettingsForm({
   ratesUpdatedAt,
   icalUrl,
   backups,
+  animEnabled,
+  fadeEnabled,
 }: {
   username: string;
   currency: string;
@@ -82,6 +86,8 @@ export function SettingsForm({
     count: number;
     latest: string | null;
   };
+  animEnabled: boolean;
+  fadeEnabled: boolean;
 }) {
   const { t, lang } = useLang();
   const router = useRouter();
@@ -157,6 +163,9 @@ export function SettingsForm({
 
   function leaveWithoutSaving() {
     const to = leaveTo;
+    // Discard the edits: reset the fields to their saved values so the stale
+    // DOM state can't persist (and look "saved") via the router cache.
+    formRef.current?.reset();
     setDirty(false);
     setLeaveTo(null);
     if (to) router.push(to);
@@ -218,6 +227,19 @@ export function SettingsForm({
               {t("set.monthlyBudgetHint")}
             </span>
           </label>
+
+          <CookieSwitch
+            label={t("set.animations")}
+            cookieName="tally_anim"
+            attr="anim"
+            initialOn={animEnabled}
+          />
+          <CookieSwitch
+            label={t("set.pageFade")}
+            cookieName="tally_fade"
+            attr="fade"
+            initialOn={fadeEnabled}
+          />
         </section>
 
         {/* Notifications — collapsible card */}
@@ -282,15 +304,11 @@ export function SettingsForm({
                   <div className="label flex items-center gap-2">
                     <DiscordLogo size={16} /> {t("set.discordNotify")}
                   </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="notifyEnabled"
-                      value="true"
-                      defaultChecked={notifyEnabled}
-                    />
-                    {t("set.notifyEnabled")}
-                  </label>
+                  <Switch
+                    name="notifyEnabled"
+                    label={t("set.notifyEnabled")}
+                    defaultChecked={notifyEnabled}
+                  />
                   <label className="block">
                     <span className="label label-soft block mb-1">
                       {t("set.webhook")}
@@ -310,15 +328,11 @@ export function SettingsForm({
                   <div className="label flex items-center gap-2">
                     <EnvelopeSimple size={16} /> {t("set.emailNotify")}
                   </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="notifyEmailEnabled"
-                      value="true"
-                      defaultChecked={notifyEmailEnabled}
-                    />
-                    {t("set.emailEnabled")}
-                  </label>
+                  <Switch
+                    name="notifyEmailEnabled"
+                    label={t("set.emailEnabled")}
+                    defaultChecked={notifyEmailEnabled}
+                  />
                   <label className="block">
                     <span className="label label-soft block mb-1">
                       {t("set.email")}
@@ -407,15 +421,11 @@ export function SettingsForm({
                   <div className="label flex items-center gap-2">
                     <WebhooksLogo size={16} /> {t("set.webhookNotify")}
                   </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="webhookEnabled"
-                      value="true"
-                      defaultChecked={webhookEnabled}
-                    />
-                    {t("set.webhookEnabled")}
-                  </label>
+                  <Switch
+                    name="webhookEnabled"
+                    label={t("set.webhookEnabled")}
+                    defaultChecked={webhookEnabled}
+                  />
                   <label className="block">
                     <span className="label label-soft block mb-1">
                       {t("set.webhookUrl")}
@@ -438,15 +448,11 @@ export function SettingsForm({
                   <div className="label flex items-center gap-2">
                     <SlackLogo size={16} /> {t("set.slackNotify")}
                   </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="slackEnabled"
-                      value="true"
-                      defaultChecked={slackEnabled}
-                    />
-                    {t("set.slackEnabled")}
-                  </label>
+                  <Switch
+                    name="slackEnabled"
+                    label={t("set.slackEnabled")}
+                    defaultChecked={slackEnabled}
+                  />
                   <label className="block">
                     <span className="label label-soft block mb-1">
                       {t("set.slackWebhook")}
@@ -466,15 +472,11 @@ export function SettingsForm({
                   <div className="label flex items-center gap-2">
                     <BellRinging size={16} /> {t("set.ntfyNotify")}
                   </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="ntfyEnabled"
-                      value="true"
-                      defaultChecked={ntfyEnabled}
-                    />
-                    {t("set.ntfyEnabled")}
-                  </label>
+                  <Switch
+                    name="ntfyEnabled"
+                    label={t("set.ntfyEnabled")}
+                    defaultChecked={ntfyEnabled}
+                  />
                   <label className="block">
                     <span className="label label-soft block mb-1">
                       {t("set.ntfyUrl")}

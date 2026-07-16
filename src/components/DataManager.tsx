@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { importData, type ActionState } from "@/app/actions";
 import { useConfirm } from "./ConfirmProvider";
 import { useLang } from "./LangProvider";
+import { Switch } from "./Switch";
 
 export function DataManager() {
   const { t } = useLang();
@@ -54,10 +55,7 @@ export function DataManager() {
           required
           className="block w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-full file:border file:border-[color:var(--color-ink)] file:bg-transparent file:text-[color:var(--color-ink)] file:text-xs file:cursor-pointer"
         />
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="replace" value="true" />
-          {t("data.replace")}
-        </label>
+        <Switch name="replace" label={t("data.replace")} />
 
         {state?.error && (
           <p className="text-sm text-[color:var(--color-accent)]">

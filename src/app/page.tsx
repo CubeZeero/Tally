@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { requireAuth } from "@/lib/auth";
 import { getUser, prisma } from "@/lib/db";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/money";
 import { convert, ensureRates, parseRates } from "@/lib/rates";
 import { PieChart } from "@/components/PieChart";
+import { CountUp } from "@/components/CountUp";
 import { colorAt } from "@/lib/colors";
 import { cycleLabel, fmtDate, relDays } from "@/lib/i18n";
 import { serverT } from "@/lib/server-lang";
@@ -92,7 +94,7 @@ export default async function DashboardPage() {
         <div className="relative px-6 md:px-12 pt-12 pb-10">
           <p className="label label-soft">{t("dash.monthlySpend")}</p>
           <h1 className="headline text-[15vw] md:text-[7.5rem] leading-[0.92] mt-2 float-in">
-            {formatMoney(totalMonthly, main)}
+            <CountUp value={totalMonthly} currency={main} />
           </h1>
           <p className="text-sm md:text-base text-[color:var(--color-ink-soft)] mt-5 max-w-md leading-relaxed">
             {t("dash.managingPre")}{" "}
@@ -119,8 +121,14 @@ export default async function DashboardPage() {
       </section>
 
       <section className="px-6 md:px-12 grid grid-cols-2 lg:grid-cols-4 gap-px bg-[color:var(--color-line)] border-y border-[color:var(--color-line)]">
-        <Stat label={t("stat.monthlyTotal")} value={formatMoney(totalMonthly, main)} />
-        <Stat label={t("stat.yearlyTotal")} value={formatMoney(totalYearly, main)} />
+        <Stat
+          label={t("stat.monthlyTotal")}
+          value={<CountUp value={totalMonthly} currency={main} />}
+        />
+        <Stat
+          label={t("stat.yearlyTotal")}
+          value={<CountUp value={totalYearly} currency={main} />}
+        />
         <Stat
           label={t("stat.count")}
           value={`${active.length}`}
@@ -238,7 +246,7 @@ function Stat({
   sub,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   sub?: string;
 }) {
   return (
@@ -272,12 +280,12 @@ function BudgetBar({
       <div className="flex items-baseline justify-between mb-2 gap-4">
         <p className="label">{t("dash.budget")}</p>
         <p className="label label-soft tabular-nums">
-          {formatMoney(spent, main)} / {formatMoney(budget, main)}
+          <CountUp value={spent} currency={main} /> / {formatMoney(budget, main)}
         </p>
       </div>
       <div className="h-2.5 rounded-full bg-[color:var(--color-line)] overflow-hidden">
         <div
-          className="h-full rounded-full transition-[width]"
+          className="anim-bar h-full rounded-full"
           style={{ width: `${Math.min(100, Math.max(0, pct))}%`, background: barColor }}
         />
       </div>

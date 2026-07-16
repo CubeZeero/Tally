@@ -371,7 +371,7 @@ function Row({
       }`}
     >
       <span
-        className="absolute left-0 bottom-0 h-[2px] transition-[width]"
+        className="anim-bar absolute left-0 bottom-0 h-[2px]"
         style={{
           width: `${Math.round(progress * 100)}%`,
           background: s.color,

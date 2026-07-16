@@ -50,18 +50,29 @@ export function LineChart({
           </linearGradient>
         </defs>
 
-        <polygon points={area} fill="url(#lc-fill)" />
-        <polyline
-          points={line}
-          fill="none"
-          stroke="var(--color-accent)"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
+        {/* Line + area rise up from the baseline on mount (labels stay put). */}
+        <g className="anim-chart-rise">
+          <polygon points={area} fill="url(#lc-fill)" />
+          <polyline
+            points={line}
+            fill="none"
+            stroke="var(--color-accent)"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          {points.map((p, i) => (
+            <circle
+              key={i}
+              cx={x(i)}
+              cy={y(p.value)}
+              r="3"
+              fill="var(--color-accent)"
+            />
+          ))}
+        </g>
         {points.map((p, i) => (
           <g key={i}>
-            <circle cx={x(i)} cy={y(p.value)} r="3" fill="var(--color-accent)" />
             <text
               x={x(i)}
               y={H - 12}

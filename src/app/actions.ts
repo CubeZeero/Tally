@@ -20,7 +20,6 @@ import { normalizeLang } from "@/lib/i18n";
 import type { Cycle } from "@/lib/money";
 import { refreshRates } from "@/lib/rates";
 import { notifyUpcoming } from "@/lib/notify";
-import { isDiscordWebhook } from "@/lib/discord";
 import { isHttpUrl, isSlackWebhook } from "@/lib/channels";
 import { parseImport } from "@/lib/data";
 import { getT } from "@/lib/i18n";
@@ -106,8 +105,10 @@ export async function updateSettings(
   const discordWebhookUrl =
     String(formData.get("discordWebhookUrl") ?? "").trim() || null;
 
-  if (discordWebhookUrl && !isDiscordWebhook(discordWebhookUrl)) {
-    return { error: getT(await getLang())("set.err.badWebhook") };
+  // Only require a well-formed http(s) URL (the strict Discord-host check is
+  // intentionally relaxed so proxies / compatible endpoints work too).
+  if (discordWebhookUrl && !isHttpUrl(discordWebhookUrl)) {
+    return { error: getT(await getLang())("set.err.badUrl") };
   }
   const notifyEmail = String(formData.get("notifyEmail") ?? "").trim() || null;
   const notifyEmailEnabled = formData.get("notifyEmailEnabled") === "true";

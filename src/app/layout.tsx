@@ -31,8 +31,11 @@ export default async function RootLayout({
   const store = await cookies();
   const theme = store.get("tally_theme")?.value === "dark" ? "dark" : "light";
   const lang = normalizeLang(store.get("tally_lang")?.value);
+  // Animations / page fade default on; each has its own settings toggle (cookie).
+  const anim = store.get("tally_anim")?.value === "off" ? "off" : "on";
+  const fade = store.get("tally_fade")?.value === "off" ? "off" : "on";
   return (
-    <html lang={lang} data-theme={theme}>
+    <html lang={lang} data-theme={theme} data-anim={anim} data-fade={fade}>
       <body>
         <LangProvider lang={lang}>
           <ConfirmProvider>{children}</ConfirmProvider>

@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 const VERSION = "0.4.0";
 const REPO = "https://github.com/CubeZeero/Tally";
 const LICENSE_URL = `${REPO}/blob/main/LICENSE`;
+const HOMEPAGE = "https://tally.cubezeero.com";
 const DEVELOPER = "CubeZeero";
 
 const CREDITS: { name: string; license: string; url: string }[] = [
@@ -76,6 +77,16 @@ export default async function AboutPage() {
               <dl className="border border-[color:var(--color-line)] rounded-xl overflow-hidden divide-y divide-[color:var(--color-line)]">
                 <InfoRow label={t("about.developer")}>
                   <span className="text-sm">{DEVELOPER}</span>
+                </InfoRow>
+                <InfoRow label={t("about.homepage")}>
+                  <a
+                    href={HOMEPAGE}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm hover:text-[color:var(--color-accent)] break-all text-right"
+                  >
+                    tally.cubezeero.com
+                  </a>
                 </InfoRow>
                 <InfoRow label={t("about.repository")}>
                   <a

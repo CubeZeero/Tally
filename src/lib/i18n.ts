@@ -315,6 +315,7 @@ const ja: Dict = {
   // about page details / credits
   "about.details": "詳細",
   "about.developer": "開発者",
+  "about.homepage": "ホームページ",
   "about.repository": "リポジトリ",
   "about.license": "ライセンス",
   "about.credits": "使用ライブラリ",
@@ -626,6 +627,7 @@ const en: Dict = {
   "set.unsavedDiscard": "Leave without saving",
   "about.details": "Details",
   "about.developer": "Developer",
+  "about.homepage": "Homepage",
   "about.repository": "Repository",
   "about.license": "License",
   "about.credits": "Credits",

@@ -42,6 +42,38 @@ Tally は起動時に追加的なスキーママイグレーションを自動�
     docker compose up -d --build
     ```
 
+## データの保存先
+
+既定では、DB とバックアップは Docker 管理の名前付きボリューム（`tally-data`）に
+保存されます。**外部ストレージなど任意のホストディレクトリに置きたい**場合は、
+`.env` の `TALLY_DATA_DIR` にホストパスを指定するだけで切り替えられます。
+
+```bash
+# 1. 保存先ディレクトリを作成
+sudo mkdir -p /mnt/storage/tally/data
+
+# 2. .env に指定
+echo "TALLY_DATA_DIR=/mnt/storage/tally/data" >> .env
+
+# 3. 起動（既存コンテナは再作成）
+docker compose up -d --build
+```
+
+これで `/mnt/storage/tally/data/tally.db`（DB）と `.../backups/`（自動バックアップ）
+がそのディレクトリに置かれ、サーバ内蔵ディスクにはデータが残りません。`DATABASE_URL`
+は `file:/data/tally.db` のまま変更不要です（`/data` はコンテナ内パスで、その実体を
+`TALLY_DATA_DIR` が決めます）。
+
+!!! warning "SQLite とネットワークストレージ"
+    保存先は**ローカルにマウントされたディスク**を推奨します。NFS / SMB などの
+    ネットワークファイルシステムは SQLite のファイルロックが不安定になることが
+    あります。
+
+!!! note "既存データの移行"
+    すでに名前付きボリュームで運用している場合は、切り替え前に `tally.db` を
+    新しいディレクトリへコピーしてください（例:
+    `docker compose cp tally:/data/tally.db /mnt/storage/tally/data/tally.db`）。
+
 ## バックアップ
 
 ### 自動バックアップ

@@ -19,7 +19,10 @@ services:
       # Email (SMTP) is configured per-user in Settings → Notifications.
       # If you prefer a server-wide fallback, add SMTP_HOST/PORT/USER/PASS/FROM here.
     volumes:
-      - tally-data:/data
+      # Where the SQLite DB + backups live. Set TALLY_DATA_DIR in .env to a host
+      # path (e.g. /mnt/storage/tally/data) to store data on external storage.
+      # If unset, the named volume "tally-data" (Docker-managed) is used.
+      - "${TALLY_DATA_DIR:-tally-data}:/data"
 
 volumes:
   tally-data:

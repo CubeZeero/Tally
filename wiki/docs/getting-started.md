@@ -39,6 +39,7 @@ openssl rand -base64 32
 | --- | --- | --- |
 | `SESSION_SECRET` | セッション Cookie の署名鍵。長いランダム文字列を設定（`openssl rand -base64 32`）。未設定の場合はプロセスごとにランダム生成され、再起動でセッションがリセットされます。 | プロセスごとにランダム |
 | `DATABASE_URL` | SQLite ファイルの場所 | `file:/data/tally.db`（Docker） |
+| `TALLY_DATA_DIR` | データ（DB＋バックアップ）を置くホストのディレクトリ。外部ストレージを指定できる。未設定なら Docker 管理の名前付きボリューム | （名前付きボリューム `tally-data`） |
 | `TZ` | 通知スケジューラーのタイムゾーン | `Asia/Tokyo` |
 | `DISABLE_REGISTRATION` | `1` で最初のアカウント作成後の新規登録を無効化 | （未設定） |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | メール通知用の SMTP 設定（**フォールバック**。ユーザーごとの設定が優先） | （未設定） |

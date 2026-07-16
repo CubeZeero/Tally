@@ -84,6 +84,7 @@ substitution; `.env` is git-ignored, so never commit real secrets.
 | --- | --- | --- |
 | `SESSION_SECRET` | Signing key for session cookies. Use a long random string (`openssl rand -base64 32`). If unset, a random per-process secret is used and sessions reset on restart. | (random per process) |
 | `DATABASE_URL` | SQLite file location | `file:/data/tally.db` (Docker) |
+| `TALLY_DATA_DIR` | Host directory for the data (DB + backups). Point at external storage to keep data off the server's internal disk; unset uses a Docker-managed named volume | (named volume `tally-data`) |
 | `TZ` | Timezone for the notification scheduler | `Asia/Tokyo` |
 | `DISABLE_REGISTRATION` | Set to `1` to block new sign-ups after the first account | (unset) |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | SMTP for email notifications (fallback; per-user SMTP in Settings takes priority) | (unset) |

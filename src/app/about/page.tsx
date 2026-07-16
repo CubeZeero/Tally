@@ -4,8 +4,8 @@ import { prisma } from "@/lib/db";
 import { Shell } from "@/components/Shell";
 import { Logo } from "@/components/Logo";
 import { serverT } from "@/lib/server-lang";
-import { APP_VERSION } from "@/lib/version";
 import { getUpdateInfo } from "@/lib/update";
+import { UpdateCheck } from "@/components/UpdateCheck";
 
 export const dynamic = "force-dynamic";
 
@@ -51,25 +51,7 @@ export default async function AboutPage() {
           <p className="text-sm md:text-base text-[color:var(--color-ink-soft)] mt-4 max-w-xl leading-relaxed">
             {t("about.desc")}
           </p>
-          <p className="label label-soft mt-4">
-            {t("about.version", { v: APP_VERSION })}
-            {update.latest &&
-              (update.updateAvailable ? (
-                <>
-                  {" · "}
-                  <a
-                    href={UPDATE_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[color:var(--color-accent)] hover:underline"
-                  >
-                    {t("about.updateAvailable", { latest: update.latest })}
-                  </a>
-                </>
-              ) : (
-                <span> · {t("about.upToDate")}</span>
-              ))}
-          </p>
+          <UpdateCheck initial={update} url={UPDATE_URL} />
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUser, prisma, randomToken } from "@/lib/db";
 import { runBackup } from "@/lib/backup";
@@ -24,10 +24,19 @@ import { isHttpUrl, isSlackWebhook } from "@/lib/channels";
 import { parseImport } from "@/lib/data";
 import { getT } from "@/lib/i18n";
 import { getLang } from "@/lib/server-lang";
+import { getUpdateInfo, UPDATE_TAG, type UpdateInfo } from "@/lib/update";
 
 export type ActionState =
   | { error?: string; ok?: boolean; count?: number }
   | undefined;
+
+/** Manual "check for updates" — bypasses the 6h cache and refreshes it. */
+export async function checkForUpdates(): Promise<UpdateInfo> {
+  await requireAuth();
+  const info = await getUpdateInfo(true); // force a fresh fetch
+  revalidateTag(UPDATE_TAG); // refresh the cached value the banner uses too
+  return info;
+}
 
 function revalidateAll() {
   revalidatePath("/");

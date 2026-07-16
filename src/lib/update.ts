@@ -7,6 +7,7 @@ import { APP_VERSION } from "./version";
 const REPO = "CubeZeero/Tally";
 const TAGS_URL = `https://api.github.com/repos/${REPO}/tags?per_page=100`;
 const REVALIDATE = 60 * 60 * 6; // 6 hours
+export const UPDATE_TAG = "update-check"; // cache tag for revalidateTag
 
 export type UpdateInfo = {
   current: string; // e.g. "1.0.0"
@@ -34,7 +35,7 @@ export function updateCheckEnabled(): boolean {
   return v !== "0" && v !== "false" && v !== "off";
 }
 
-async function getLatestVersion(): Promise<string | null> {
+async function getLatestVersion(force = false): Promise<string | null> {
   if (!updateCheckEnabled()) return null;
   try {
     const res = await fetch(TAGS_URL, {
@@ -42,7 +43,11 @@ async function getLatestVersion(): Promise<string | null> {
         Accept: "application/vnd.github+json",
         "User-Agent": "tally-update-check",
       },
-      next: { revalidate: REVALIDATE },
+      // Manual check bypasses the cache; automatic check is cached for 6h and
+      // tagged so a manual check can refresh it for everyone (revalidateTag).
+      ...(force
+        ? { cache: "no-store" as const }
+        : { next: { revalidate: REVALIDATE, tags: [UPDATE_TAG] } }),
     });
     if (!res.ok) return null;
     const tags = (await res.json()) as { name?: string }[];
@@ -57,8 +62,8 @@ async function getLatestVersion(): Promise<string | null> {
   }
 }
 
-export async function getUpdateInfo(): Promise<UpdateInfo> {
-  const latest = await getLatestVersion();
+export async function getUpdateInfo(force = false): Promise<UpdateInfo> {
+  const latest = await getLatestVersion(force);
   return {
     current: APP_VERSION,
     latest,

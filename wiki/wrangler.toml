@@ -1,3 +1,7 @@
-name = "tally-wiki"
+name = "tally"
 compatibility_date = "2026-07-05"
-pages_build_output_dir = "site"
+
+# The deploy step runs `wrangler deploy` (Workers with static assets), so serve
+# the Zensical build output (./site) as an assets-only Worker.
+[assets]
+directory = "./site"

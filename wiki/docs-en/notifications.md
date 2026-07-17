@@ -51,12 +51,6 @@ Notifications**, and apply to all channels.
 4. Use "Send test now" to verify it works (this sends to all enabled
    channels).
 
-!!! note "Any http(s) webhook URL is allowed"
-    This used to be restricted to the `https://discord.com/api/webhooks/...`
-    format. To support proxies and Discord-compatible endpoints, Tally now
-    accepts any well-formed **http(s) URL** (only malformed URL strings are
-    rejected). You're responsible for managing the destination.
-
 ## Email (SMTP)
 
 Email notifications can be configured with **per-user** SMTP settings. Under

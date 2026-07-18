@@ -6,6 +6,7 @@ import { SettingsForm } from "@/components/SettingsForm";
 import { ListManager } from "@/components/ListManager";
 import { DataManager } from "@/components/DataManager";
 import { serverT } from "@/lib/server-lang";
+import { ACCENT_KEYS, DEFAULT_ACCENT } from "@/lib/accents";
 import {
   backupIntervalHours,
   backupsEnabled,
@@ -36,6 +37,8 @@ export default async function SettingsPage() {
   const cookieStore = await cookies();
   const animEnabled = cookieStore.get("tally_anim")?.value !== "off";
   const fadeEnabled = cookieStore.get("tally_fade")?.value !== "off";
+  const accentCookie = cookieStore.get("tally_accent")?.value ?? "";
+  const accent = ACCENT_KEYS.includes(accentCookie) ? accentCookie : DEFAULT_ACCENT;
 
   // Absolute origin for the iCal subscription URL.
   const h = await headers();
@@ -94,6 +97,7 @@ export default async function SettingsPage() {
             backups={backups}
             animEnabled={animEnabled}
             fadeEnabled={fadeEnabled}
+            accent={accent}
           />
 
           <div className="space-y-6">

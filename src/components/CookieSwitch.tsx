@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 /**
  * Instant on/off switch backed by a cookie + a `data-*` attribute on <html>
@@ -21,6 +21,12 @@ export function CookieSwitch({
   initialOn: boolean;
 }) {
   const [on, setOn] = useState(initialOn);
+
+  // Keep the switch in sync with the server-known value after a re-render
+  // (e.g. an auto-save revalidates /settings), so it can't drift/flip.
+  useEffect(() => {
+    setOn(initialOn);
+  }, [initialOn]);
 
   function set(next: boolean) {
     setOn(next);

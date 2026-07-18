@@ -167,8 +167,12 @@ const ja: Dict = {
   "set.testSent": "送信しました。各チャンネルを確認してください。",
   "set.security": "セキュリティ",
   "set.account": "ログイン中のユーザー",
-  "set.changePassword": "パスワード変更（空欄なら変更しない）",
+  "set.changePassword": "パスワード変更",
   "set.newPasswordPh": "新しいパスワード（8文字以上）",
+  "set.changePwBtn": "変更",
+  "set.pwChanged": "パスワードを変更しました",
+  "set.autoSaved": "保存しました",
+  "set.autoSaveHint": "変更は自動保存されます",
   "set.saveButton": "設定を保存",
   "set.err.passwordShort": "新しいパスワードは8文字以上にしてください。",
   "set.err.badWebhook":
@@ -295,6 +299,7 @@ const ja: Dict = {
   "set.monthlyBudgetHint": "予測の月間合計がこの額を超えると通知に警告を追加します。空欄で無効。",
   "set.animations": "コンポーネントアニメーション",
   "set.pageFade": "ページ遷移フェード",
+  "set.accent": "アクセントカラー",
   // iCal feed
   "set.ical": "iCal カレンダー連携",
   "set.icalNote":
@@ -505,8 +510,12 @@ const en: Dict = {
   "set.testSent": "Sent. Check your channels.",
   "set.security": "Security",
   "set.account": "Signed in as",
-  "set.changePassword": "Change password (leave blank to keep)",
+  "set.changePassword": "Change password",
   "set.newPasswordPh": "New password (8+ characters)",
+  "set.changePwBtn": "Change",
+  "set.pwChanged": "Password changed",
+  "set.autoSaved": "Saved",
+  "set.autoSaveHint": "Changes are saved automatically",
   "set.saveButton": "Save settings",
   "set.err.passwordShort": "New password must be at least 8 characters.",
   "set.err.badWebhook":
@@ -622,6 +631,7 @@ const en: Dict = {
   "set.monthlyBudgetHint": "Adds a warning to notifications when the projected monthly total exceeds this. Blank to disable.",
   "set.animations": "Component animations",
   "set.pageFade": "Page-transition fade",
+  "set.accent": "Accent color",
   "set.ical": "iCal calendar feed",
   "set.icalNote": "Subscribe to this URL in any calendar app to see your payment dates. Anyone with the URL can read it, so keep it private.",
   "set.icalEnable": "Enable iCal",

@@ -228,6 +228,21 @@ export async function testDiscord(): Promise<ActionState> {
   return result.ok ? { ok: true } : { error: `${result.error ?? result.status}` };
 }
 
+/** Change the account password. Separate from auto-saved settings. */
+export async function changePassword(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const userId = await requireAuth();
+  const pw = String(formData.get("password") ?? "");
+  if (!pw) return {};
+  if (pw.length < 8) {
+    return { error: getT(await getLang())("set.err.passwordShort") };
+  }
+  await setUserPassword(userId, pw);
+  return { ok: true };
+}
+
 // ---- iCal feed -----------------------------------------------------------
 
 export async function generateIcalToken(): Promise<ActionState> {

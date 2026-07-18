@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { useActionState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState, useTransition } from "react";
 import {
   BellRinging,
   CalendarBlank,
@@ -17,6 +15,7 @@ import {
   updateSettings,
   refreshRatesAction,
   testDiscord,
+  changePassword,
   generateIcalToken,
   disableIcal,
   backupNowAction,
@@ -26,6 +25,7 @@ import { CURRENCIES } from "@/lib/money";
 import { useLang } from "./LangProvider";
 import { LangSwitcher } from "./LangSwitcher";
 import { CookieSwitch } from "./CookieSwitch";
+import { AccentPicker } from "./AccentPicker";
 import { Switch } from "./Switch";
 
 export function SettingsForm({
@@ -55,6 +55,7 @@ export function SettingsForm({
   backups,
   animEnabled,
   fadeEnabled,
+  accent,
 }: {
   username: string;
   currency: string;
@@ -88,87 +89,89 @@ export function SettingsForm({
   };
   animEnabled: boolean;
   fadeEnabled: boolean;
+  accent: string;
 }) {
   const { t, lang } = useLang();
-  const router = useRouter();
   const [notifyOpen, setNotifyOpen] = useState(false);
-  const [state, action, pending] = useActionState<ActionState, FormData>(
-    updateSettings,
-    undefined,
-  );
-  const saved = state?.ok;
-
-  // Unsaved-changes guard: warn before navigating away with pending edits.
   const formRef = useRef<HTMLFormElement>(null);
-  const [dirty, setDirty] = useState(false);
-  const [leaveTo, setLeaveTo] = useState<string | null>(null);
-  const [leaveError, setLeaveError] = useState<string | null>(null);
-  const [leaveSaving, setLeaveSaving] = useState(false);
 
-  // A successful save clears the dirty flag.
-  useEffect(() => {
-    if (state?.ok) setDirty(false);
-  }, [state]);
+  // Auto-save: settings persist as soon as you change them (no Save button).
+  // The password field is handled by its own button and never auto-saved.
+  const [saveState, setSaveState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Native prompt for tab close / reload / external navigation.
-  useEffect(() => {
-    if (!dirty) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
-
-  // Intercept in-app link clicks (nav rail, top nav, mobile menu) while dirty.
-  useEffect(() => {
-    if (!dirty) return;
-    const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0) return;
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const a = (e.target as HTMLElement)?.closest?.("a");
-      if (!a) return;
-      const href = a.getAttribute("href");
-      if (!href || !href.startsWith("/") || href.startsWith("/settings")) return;
-      if (a.target && a.target !== "_self") return;
-      e.preventDefault();
-      // stopImmediatePropagation is required: Next's <Link> navigates from its
-      // own React click handler (delegated on document), which plain
-      // stopPropagation does not reliably prevent.
-      e.stopImmediatePropagation();
-      e.stopPropagation();
-      setLeaveError(null);
-      setLeaveTo(href);
-    };
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
-  }, [dirty]);
-
-  async function saveAndLeave() {
-    if (!formRef.current || !leaveTo) return;
-    setLeaveSaving(true);
-    setLeaveError(null);
-    const res = await updateSettings(undefined, new FormData(formRef.current));
-    setLeaveSaving(false);
-    if (res?.error) {
-      setLeaveError(res.error);
-      return;
-    }
-    const to = leaveTo;
-    setDirty(false);
-    setLeaveTo(null);
-    router.push(to);
+  function currentFormData(): FormData {
+    const fd = new FormData(formRef.current!);
+    fd.delete("password"); // changed via its own action, never auto-saved
+    return fd;
   }
 
-  function leaveWithoutSaving() {
-    const to = leaveTo;
-    // Discard the edits: reset the fields to their saved values so the stale
-    // DOM state can't persist (and look "saved") via the router cache.
-    formRef.current?.reset();
-    setDirty(false);
-    setLeaveTo(null);
-    if (to) router.push(to);
+  async function doSave() {
+    if (!formRef.current) return;
+    setSaveState("saving");
+    const res = await updateSettings(undefined, currentFormData());
+    if (res?.error) {
+      setSaveState("error");
+      setSaveError(res.error);
+    } else {
+      setSaveState("saved");
+      setSaveError(null);
+    }
+  }
+
+  function scheduleSave(immediate: boolean) {
+    if (timer.current) clearTimeout(timer.current);
+    if (immediate) void doSave();
+    else timer.current = setTimeout(() => void doSave(), 700);
+  }
+
+  function onFormChange(e: React.FormEvent<HTMLFormElement>) {
+    const el = e.target as HTMLInputElement;
+    if (el.name === "password") return; // its own button saves it
+    const immediate =
+      el.tagName === "SELECT" || el.type === "checkbox" || el.type === "radio";
+    scheduleSave(immediate);
+  }
+
+  function onFormBlur() {
+    // Flush a pending debounced save when focus leaves an edited field.
+    if (timer.current) {
+      clearTimeout(timer.current);
+      void doSave();
+    }
+  }
+
+  // Password change — explicit, separate from auto-save.
+  const [pwPending, startPw] = useTransition();
+  const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(
+    null,
+  );
+  function changePw() {
+    const input = formRef.current?.elements.namedItem(
+      "password",
+    ) as HTMLInputElement | null;
+    const pw = input?.value ?? "";
+    if (!pw) return;
+    startPw(async () => {
+      const fd = new FormData();
+      fd.set("password", pw);
+      const res = await changePassword(undefined, fd);
+      if (res?.error) setPwMsg({ ok: false, text: res.error });
+      else {
+        setPwMsg({ ok: true, text: t("set.pwChanged") });
+        if (input) input.value = "";
+      }
+    });
+  }
+
+  // "Test send" flushes any pending save first, so the just-typed value is used.
+  async function saveAndTest(): Promise<ActionState> {
+    if (timer.current) clearTimeout(timer.current);
+    await doSave();
+    return testDiscord();
   }
 
   // A slightly inset panel used for the Discord / email channel groups.
@@ -179,8 +182,8 @@ export function SettingsForm({
     <div className="space-y-6">
       <form
         ref={formRef}
-        action={action}
-        onChange={() => setDirty(true)}
+        onChange={onFormChange}
+        onBlur={onFormBlur}
         className="space-y-6"
       >
         {/* General */}
@@ -240,6 +243,7 @@ export function SettingsForm({
             attr="fade"
             initialOn={fadeEnabled}
           />
+          <AccentPicker label={t("set.accent")} initial={accent} />
         </section>
 
         {/* Notifications — collapsible card */}
@@ -506,10 +510,11 @@ export function SettingsForm({
                   </span>
                 </div>
 
-                {/* Test all configured channels */}
+                {/* Test all configured channels (saves the form first, so the
+                    current input — not the last-saved value — is tested). */}
                 <div className="pt-1">
                   <ActionButton
-                    run={testDiscord}
+                    run={saveAndTest}
                     label={t("set.testSend")}
                     okMessage={t("set.testSent")}
                   />
@@ -530,35 +535,47 @@ export function SettingsForm({
             <p className="text-sm">{username}</p>
           </div>
 
-          <label className="block">
+          <div>
             <span className="label label-soft block mb-1">
               {t("set.changePassword")}
             </span>
-            <input
-              className="field"
-              type="password"
-              name="password"
-              placeholder={t("set.newPasswordPh")}
-              autoComplete="new-password"
-            />
-          </label>
+            <div className="flex items-center gap-3 flex-wrap">
+              <input
+                className="field flex-1 min-w-[12rem]"
+                type="password"
+                name="password"
+                placeholder={t("set.newPasswordPh")}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={pwPending}
+                onClick={changePw}
+              >
+                {pwPending ? t("common.saving") : t("set.changePwBtn")}
+              </button>
+            </div>
+            {pwMsg && (
+              <span
+                className={`text-sm mt-2 block ${pwMsg.ok ? "text-[color:var(--color-ink-soft)]" : "text-[color:var(--color-accent)]"}`}
+              >
+                {pwMsg.text}
+              </span>
+            )}
+          </div>
         </section>
 
-        {/* Footer: messages + save */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <button className="btn" type="submit" disabled={pending}>
-            {pending ? t("common.saving") : t("set.saveButton")}
-          </button>
-          {state?.error && (
-            <span className="text-sm text-[color:var(--color-accent)]">
-              {state.error}
+        {/* Auto-save status (no Save button — changes persist automatically) */}
+        <div className="flex items-center gap-2 flex-wrap text-sm min-h-[1.25rem] text-[color:var(--color-ink-soft)]">
+          {saveState === "saving" && <span>{t("common.saving")}</span>}
+          {saveState === "saved" && <span>{t("set.autoSaved")}</span>}
+          {saveState === "error" && (
+            <span className="text-[color:var(--color-accent)]">
+              {saveError}
             </span>
           )}
-          {saved && (
-            <span className="text-sm text-[color:var(--color-ink-soft)]">
-              {t("common.saved")}
-            </span>
-          )}
+          {saveState === "idle" && <span>{t("set.autoSaveHint")}</span>}
         </div>
       </form>
 
@@ -646,55 +663,6 @@ export function SettingsForm({
         />
       </section>
 
-      {leaveTo && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-          role="alertdialog"
-          aria-modal="true"
-        >
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setLeaveTo(null)}
-          />
-          <div className="relative w-full max-w-sm bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-2xl p-6 float-in">
-            <h2 className="headline text-xl mb-2">{t("set.unsavedTitle")}</h2>
-            <p className="text-sm text-[color:var(--color-ink-soft)] leading-relaxed">
-              {t("set.unsavedMsg")}
-            </p>
-            {leaveError && (
-              <p className="text-sm text-[color:var(--color-accent)] mt-3">
-                {leaveError}
-              </p>
-            )}
-            <div className="flex flex-col gap-2 mt-6">
-              <button
-                type="button"
-                className="btn"
-                disabled={leaveSaving}
-                onClick={saveAndLeave}
-              >
-                {leaveSaving ? t("common.saving") : t("set.unsavedSave")}
-              </button>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="btn btn-ghost flex-1"
-                  onClick={leaveWithoutSaving}
-                >
-                  {t("set.unsavedDiscard")}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost flex-1"
-                  onClick={() => setLeaveTo(null)}
-                >
-                  {t("common.cancel")}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

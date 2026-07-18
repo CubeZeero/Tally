@@ -1,7 +1,0 @@
-name = "tally"
-compatibility_date = "2026-07-05"
-
-# The deploy step runs `wrangler deploy` (Workers with static assets), so serve
-# the Zensical build output (./site) as an assets-only Worker.
-[assets]
-directory = "./site"

@@ -1,0 +1,120 @@
+[project]
+site_name = "Tally"
+site_description = "Tally — セルフホスト可能なサブスクリプション管理ダッシュボードのドキュメント。"
+site_author = "CubeZeero"
+# Set this to your Cloudflare Pages URL (custom domain or *.pages.dev).
+site_url = "https://tally.cubezeero.com/"
+copyright = """
+Copyright &copy; 2026 CubeZeero — Tally is licensed under AGPL-3.0
+"""
+
+repo_url = "https://github.com/CubeZeero/Tally"
+repo_name = "CubeZeero/Tally"
+# Docs live in wiki/docs of the main repo.
+edit_uri = "edit/main/wiki/docs/"
+
+nav = [
+  { "ホーム" = "index.md" },
+  { "はじめに" = "getting-started.md" },
+  { "設定" = "configuration.md" },
+  { "機能" = "features.md" },
+  { "通知" = "notifications.md" },
+  { "セルフホスト" = "self-hosting.md" },
+  { "よくある質問" = "faq.md" },
+  { "変更履歴" = "changelog.md" },
+]
+
+# ----------------------------------------------------------------------------
+[project.theme]
+language = "ja"
+custom_dir = "overrides"
+logo = "assets/logo.svg"
+favicon = "assets/logo.svg"
+features = [
+  "announce.dismiss",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.code.select",
+  "content.footnote.tooltips",
+  "content.tabs.link",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "black"
+accent = "deep orange"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "black"
+accent = "deep orange"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/CubeZeero/Tally"
+
+# Language switcher (header). Each language is a separately-built site:
+# ja -> / (this config), en -> /en/ (zensical.en.toml).
+[[project.extra.alternate]]
+name = "日本語"
+link = "/"
+lang = "ja"
+
+[[project.extra.alternate]]
+name = "English"
+link = "/en/"
+lang = "en"
+
+# ----------------------------------------------------------------------------
+# Markdown extensions (defaults from the Zensical template).
+# ----------------------------------------------------------------------------
+[project.markdown_extensions.abbr]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.footnotes]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.toc]
+permalink = true
+[project.markdown_extensions.pymdownx.arithmatex]
+generic = true
+[project.markdown_extensions.pymdownx.betterem]
+[project.markdown_extensions.pymdownx.caret]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.emoji]
+emoji_generator = "zensical.extensions.emoji.to_svg"
+emoji_index = "zensical.extensions.emoji.twemoji"
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.keys]
+[project.markdown_extensions.pymdownx.magiclink]
+[project.markdown_extensions.pymdownx.mark]
+[project.markdown_extensions.pymdownx.smartsymbols]
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" }
+]
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+combine_header_slug = true
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true
+[project.markdown_extensions.pymdownx.tilde]

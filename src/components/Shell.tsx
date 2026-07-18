@@ -48,7 +48,11 @@ export async function Shell({
   // Show an "update available" banner unless the user already dismissed this
   // exact latest version.
   const update = await getUpdateInfo();
-  const dismissed = (await cookies()).get("tally_update_seen")?.value;
+  const cookieStore = await cookies();
+  const dismissed = cookieStore.get("tally_update_seen")?.value;
+  // Page-transition fade preference (default on) — passed per navigation so
+  // toggling it never re-animates the page currently on screen.
+  const fadeOn = cookieStore.get("tally_fade")?.value !== "off";
   const showUpdate =
     update.updateAvailable && !!update.latest && dismissed !== update.latest;
 
@@ -137,7 +141,7 @@ export async function Shell({
         </header>
 
         <main className="flex-1">
-          <PageFade>{children}</PageFade>
+          <PageFade fade={fadeOn}>{children}</PageFade>
         </main>
       </div>
     </div>

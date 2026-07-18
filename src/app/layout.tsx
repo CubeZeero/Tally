@@ -4,6 +4,7 @@ import { ConfirmProvider } from "@/components/ConfirmProvider";
 import { LangProvider } from "@/components/LangProvider";
 import { PwaRegister } from "@/components/PwaRegister";
 import { getT, normalizeLang } from "@/lib/i18n";
+import { ACCENT_KEYS, DEFAULT_ACCENT } from "@/lib/accents";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,8 +35,16 @@ export default async function RootLayout({
   // Animations / page fade default on; each has its own settings toggle (cookie).
   const anim = store.get("tally_anim")?.value === "off" ? "off" : "on";
   const fade = store.get("tally_fade")?.value === "off" ? "off" : "on";
+  const accentCookie = store.get("tally_accent")?.value ?? "";
+  const accent = ACCENT_KEYS.includes(accentCookie) ? accentCookie : DEFAULT_ACCENT;
   return (
-    <html lang={lang} data-theme={theme} data-anim={anim} data-fade={fade}>
+    <html
+      lang={lang}
+      data-theme={theme}
+      data-anim={anim}
+      data-fade={fade}
+      data-accent={accent}
+    >
       <body>
         <LangProvider lang={lang}>
           <ConfirmProvider>{children}</ConfirmProvider>

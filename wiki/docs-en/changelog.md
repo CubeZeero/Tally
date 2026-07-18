@@ -7,6 +7,17 @@ icon: lucide/history
 Release history for Tally. Each version corresponds to a
 [GitHub tag](https://github.com/CubeZeero/Tally/tags).
 
+## v1.1.2 — 2026-07-18
+
+- **Settings auto-save** — removed the Save button; changes persist immediately
+  (text inputs are debounced). The password is changed via its own button.
+- **Accent color** — pick from swatches in Settings (light/dark aware).
+- Fixed a flicker when enabling the page-transition fade.
+- Fixed the animation/fade switches drifting after a save.
+- Fixed "Send test" so it tests the currently entered webhook, not the
+  last-saved one.
+- Adjusted the position of the dashboard hero circle.
+
 ## v1.1.1 — 2026-07-17
 
 - **Manual update check** — the "Check for updates" button on the About page

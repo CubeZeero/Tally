@@ -25,6 +25,23 @@
   --color-accent: #ff8a1f;
 }
 
+/* Accent color presets — chosen per user, toggled via data-accent on <html>.
+   Light value first, then a slightly brighter dark-theme value. */
+:root[data-accent="orange"] { --color-accent: #ff7a00; }
+[data-theme="dark"][data-accent="orange"] { --color-accent: #ff8a1f; }
+:root[data-accent="red"] { --color-accent: #e23b3b; }
+[data-theme="dark"][data-accent="red"] { --color-accent: #ff5a5a; }
+:root[data-accent="pink"] { --color-accent: #e0479b; }
+[data-theme="dark"][data-accent="pink"] { --color-accent: #ff6fb3; }
+:root[data-accent="purple"] { --color-accent: #7c4dff; }
+[data-theme="dark"][data-accent="purple"] { --color-accent: #9b7bff; }
+:root[data-accent="blue"] { --color-accent: #2f6bff; }
+[data-theme="dark"][data-accent="blue"] { --color-accent: #5c8bff; }
+:root[data-accent="teal"] { --color-accent: #0d9488; }
+[data-theme="dark"][data-accent="teal"] { --color-accent: #2dd4bf; }
+:root[data-accent="green"] { --color-accent: #1f9d55; }
+[data-theme="dark"][data-accent="green"] { --color-accent: #37c46e; }
+
 html {
   background: var(--color-paper);
 }
@@ -259,7 +276,10 @@ select.field {
     transform-origin: left;
     animation: bar-grow 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
-  :root[data-fade="on"] .page-fade {
+  /* The animation is applied per navigation by <PageFade> adding the class
+     (driven by a server prop), NOT by a live attribute — so toggling the
+     preference never re-animates the page that's already on screen. */
+  .page-fade {
     animation: page-fade-in 0.15s ease both;
   }
 }

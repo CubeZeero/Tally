@@ -87,7 +87,7 @@ export default async function DashboardPage() {
       <section className="relative overflow-hidden">
         <div
           className="blob hidden sm:block"
-          style={{ width: 460, height: 460, right: "-80px", top: "-90px" }}
+          style={{ width: 460, height: 460, right: "-80px", top: "-130px" }}
           aria-hidden
         />
 

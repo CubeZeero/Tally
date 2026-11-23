@@ -244,6 +244,8 @@ export const ja = {
     "セルフホスト可能なサブスクリプション管理ダッシュボード。契約中のサービスの料金・更新日・支出をひと目で把握できます。",
   "about.version": "バージョン {v}",
   "about.updateAvailable": "v{latest} が利用可能",
+  "about.developmentBuild": "開発版",
+  "about.latestStable": "最新の安定版は v{latest}",
   "about.upToDate": "最新版です",
   "update.available":
     "新しいバージョン v{latest} が利用可能です（現在 v{current}）。",

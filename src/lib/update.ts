@@ -15,18 +15,22 @@ export type UpdateInfo = {
   updateAvailable: boolean;
 };
 
-function parseSemver(v: string): [number, number, number] | null {
-  const m = /^v?(\d+)\.(\d+)\.(\d+)/.exec(v.trim());
-  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+function parseVersion(value: string) {
+  const match = /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.exec(value.trim());
+  if (!match) return null;
+  return { numbers: match.slice(1, 4).map(Number), prerelease: Boolean(match[4]) };
 }
 
-/** Returns > 0 if a is newer than b, < 0 if older, 0 if equal/unparseable. */
-function compare(a: string, b: string): number {
-  const pa = parseSemver(a);
-  const pb = parseSemver(b);
-  if (!pa || !pb) return 0;
-  for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i];
-  return 0;
+function isNewerStable(candidate: string, current: string): boolean {
+  const stable = parseVersion(candidate);
+  const installed = parseVersion(current);
+  if (!stable || stable.prerelease || !installed) return false;
+  for (let i = 0; i < stable.numbers.length; i++) {
+    if (stable.numbers[i] !== installed.numbers[i]) {
+      return stable.numbers[i] > installed.numbers[i];
+    }
+  }
+  return installed.prerelease;
 }
 
 /** Self-hosters can disable the check entirely with UPDATE_CHECK=0. */
@@ -53,8 +57,8 @@ async function getLatestVersion(force = false): Promise<string | null> {
     const tags = (await res.json()) as { name?: string }[];
     let latest: string | null = null;
     for (const t of tags) {
-      if (!t.name || !parseSemver(t.name)) continue;
-      if (!latest || compare(t.name, latest) > 0) latest = t.name;
+      if (!t.name || parseVersion(t.name)?.prerelease !== false) continue;
+      if (!latest || isNewerStable(t.name, latest)) latest = t.name;
     }
     return latest ? latest.replace(/^v/, "") : null;
   } catch {
@@ -67,6 +71,6 @@ export async function getUpdateInfo(force = false): Promise<UpdateInfo> {
   return {
     current: APP_VERSION,
     latest,
-    updateAvailable: !!latest && compare(latest, APP_VERSION) > 0,
+    updateAvailable: !!latest && isNewerStable(latest, APP_VERSION),
   };
 }

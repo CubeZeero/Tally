@@ -125,6 +125,21 @@ docker compose up -d --build
 
 Pin or roll back to a specific release with `git checkout v1.0.0`.
 
+## REST API
+
+The REST API lives at `/api/v1`. Generate or copy your API key in **Settings → MCP integration** and send it in the `Authorization: Bearer` header. Each key is limited to its owner's data. Revoking it in Settings immediately disables access.
+
+To create, update, pause, resume, duplicate, or delete subscriptions, generate a separate **REST API write key** in the same section. Use it in the same Bearer header. Set `active` to `false` to pause and `true` to resume.
+
+```sh
+curl -fsS -H "Authorization: Bearer ${TALLY_API_KEY}" \
+  'http://localhost:6400/api/v1/subscriptions?activeOnly=true'
+```
+
+See the [OpenAPI definition](public/openapi.json) and [ready-to-run HTTP requests](docs/rest-api.http). Set `TALLY_API_KEY` in your local shell for the curl example. Use your own Tally URL for remote access and keep the key out of version control.
+
+See the [MCP tool list](docs/mcp-tools.md) for the corresponding MCP operations.
+
 ## Local development
 
 ```bash

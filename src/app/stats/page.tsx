@@ -14,6 +14,7 @@ import {
   isInTrial,
   monthlyCost,
   occurrencesInRange,
+  subscriptionBillingAnchor,
 } from "@/lib/money";
 import { ensureRates, parseRates } from "@/lib/rates";
 import { serverT } from "@/lib/server-lang";
@@ -85,7 +86,7 @@ export default async function StatsPage() {
   const windowEnd = new Date(now.getFullYear(), now.getMonth() + 12, 0, 23, 59, 59);
   const monthly12 = Array(12).fill(0);
   for (const s of active) {
-    const anchor = s.trialEndDate ?? s.nextBillDate ?? s.startDate;
+    const anchor = subscriptionBillingAnchor(s);
     const converted = convert(s.cost, s.currency, main, rates);
     if (converted === null) continue;
     for (const date of occurrencesInRange(

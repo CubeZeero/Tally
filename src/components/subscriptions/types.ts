@@ -1,0 +1,20 @@
+export type Sub = {
+  id: string;
+  name: string;
+  description: string | null;
+  cost: number;
+  currency: string | null;
+  icon: string | null;
+  image: string | null;
+  cycle: string;
+  cycleCount: number;
+  startDate: string;
+  nextBillDate: string | null;
+  trialEndDate: string | null;
+  category: string | null;
+  paymentMethod: string | null;
+  url: string | null;
+  cancelReminderDays: number | null;
+  color: string;
+  active: boolean;
+};

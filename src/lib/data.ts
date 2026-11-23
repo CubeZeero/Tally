@@ -36,7 +36,7 @@ type SubLike = {
   active: boolean;
 };
 
-function ymd(d: Date | null): string {
+export function ymd(d: Date | null): string {
   if (!d) return "";
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
@@ -81,11 +81,12 @@ export function toCSV(subs: SubLike[]): string {
 }
 
 /** Parse CSV text into an array of cell arrays (handles quotes/commas/newlines). */
-function parseCSV(text: string): string[][] {
+export function parseCSV(text: string, strict = false): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
   let inQuotes = false;
+  let closedQuote = false;
   const s = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   for (let i = 0; i < s.length; i++) {
@@ -97,25 +98,32 @@ function parseCSV(text: string): string[][] {
           i++;
         } else {
           inQuotes = false;
+          closedQuote = true;
         }
       } else {
         field += c;
       }
+    } else if (strict && closedQuote && c !== "," && c !== "\n") {
+      throw new Error("Unexpected content after CSV quote");
     } else if (c === '"') {
+      if (strict && field) throw new Error("Unexpected CSV quote");
       inQuotes = true;
     } else if (c === ",") {
       row.push(field);
       field = "";
+      closedQuote = false;
     } else if (c === "\n") {
       row.push(field);
       rows.push(row);
       row = [];
       field = "";
+      closedQuote = false;
     } else {
       field += c;
     }
   }
-  if (field.length > 0 || row.length > 0) {
+  if (strict && inQuotes) throw new Error("Unterminated CSV field");
+  if (field.length > 0 || row.length > 0 || (strict && closedQuote)) {
     row.push(field);
     rows.push(row);
   }

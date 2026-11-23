@@ -8,7 +8,7 @@ Tally exposes a Streamable HTTP MCP server at `/api/mcp`. An AI assistant can
 read the signed-in user's subscriptions and, with OAuth write access, manage
 them and their categories and payment methods.
 
-!!! note "Available in development builds"
+!!! note "Available in v1.2.0 and later"
     Check the version running on your Tally instance for tool availability.
 
 ## Read tools

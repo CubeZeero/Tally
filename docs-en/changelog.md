@@ -7,7 +7,7 @@ icon: lucide/history
 Release history for Tally. Each version corresponds to a
 [GitHub tag](https://github.com/CubeZeero/Tally/tags).
 
-## v1.2.0
+## v1.2.0 — 2026-11-24 { #v120 }
 
 ### New features
 

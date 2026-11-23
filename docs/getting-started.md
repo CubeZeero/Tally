@@ -9,7 +9,7 @@ Tally は単一の Docker コンテナとして動作します。データはマ
 
 
 !!! note "安定版と開発版"
-    通常の導入には `stable` を使います。このページのネットワーク・通知関連の `TALLY_*` 設定は、セキュリティ変更を含む `main` の開発版に適用されます。特定のリリースを使う場合は、同梱の `.env.example` と `docker-compose.yml` を確認してください。
+    通常の導入には `stable` を使います。このページのネットワーク・通知関連の `TALLY_*` 設定は、`v1.2.0` 以降に適用されます。特定のリリースを使う場合は、同梱の `.env.example` と `docker-compose.yml` を確認してください。
 
 ## 前提
 
@@ -51,7 +51,7 @@ openssl rand -base64 32
 | `BACKUP_INTERVAL_HOURS` | 自動バックアップの間隔（時間） | `24` |
 | `BACKUP_KEEP` | 保持する世代数（超過分は古いものから削除） | `7` |
 | `BACKUP_DIR` | バックアップの保存先 | DB と同じボリューム内の `backups/` |
-| `UPDATE_CHECK` | 最新の GitHub タグと比較して「新バージョンあり」バナーを表示。`0` で無効化（api.github.com への定期アクセスを停止） | `1`（有効） |
+| `UPDATE_CHECK` | 最新の安定版 GitHub タグと比較して「新バージョンあり」バナーを表示。`0` で無効化（api.github.com への定期アクセスを停止） | `1`（有効） |
 | `TALLY_BIND_ADDRESS` | 任意。ポート `6400` の公開先を `127.0.0.1` やサーバー自身の LAN・Tailscale IP に限定 | 未設定（全インターフェース） |
 | `TALLY_PUBLIC_URL` | MCP の OAuth と接続 URL に使う外部オリジン。例 `https://tally.example.com` | リクエストから推定 |
 | `TALLY_NOTIFICATION_ORIGINS` | カスタム Webhook で許可するオリジンをカンマ区切りで指定。非標準ポートも含める | 空欄 |
@@ -88,7 +88,7 @@ docker compose up -d --build
 作成します。データはサーバー内にのみ保存されます。
 
 !!! tip "最初のアカウント"
-    最初に作成したアカウントが、既存データをすべて引き継ぎます。その後は、
+    旧シングルユーザー版の未割り当てデータがある場合は、最初に作成したアカウントが引き継ぎます。その後は、
     追加登録を許可する場合に `DISABLE_REGISTRATION=0` を設定してください。
 
 ??? note "`docker run` で起動する場合"

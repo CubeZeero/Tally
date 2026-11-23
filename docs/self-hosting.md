@@ -18,10 +18,22 @@ Tally は起動時に追加的なスキーママイグレーションを自動�
     # 初回
     git clone -b stable https://github.com/CubeZeero/Tally.git
     cd Tally
-    # 更新
-    git pull
+    # stable にいる状態で更新
+    git pull --ff-only
     docker compose up -d --build
     ```
+
+    **`main` やバージョンタグから安定版に戻す場合**は、既存の Tally ディレクトリで以下を実行します。`main` にいる状態で `git pull` すると、開発版が更新されます。
+
+    ```bash
+    git remote set-branches --add origin stable
+    git fetch origin
+    git switch stable
+    git pull --ff-only
+    docker compose up -d --build
+    ```
+
+    最初の2行は、単一ブランチだけをクローンしていた場合にも `stable` を取得できるようにします。開発版でDBの形式が変わり、安定版で読み込めない場合は、開発版へ切り替える前のバックアップを使ってください。
 
 === "バージョンを固定"
 
@@ -29,7 +41,7 @@ Tally は起動時に追加的なスキーママイグレーションを自動�
 
     ```bash
     git fetch --tags
-    git checkout v1.0.0
+    git switch --detach v1.2.0
     docker compose up -d --build
     ```
 
@@ -38,7 +50,10 @@ Tally は起動時に追加的なスキーママイグレーションを自動�
     最新の開発中コードを試す場合（動作は保証されません）。
 
     ```bash
-    git checkout main && git pull
+    git remote set-branches --add origin main
+    git fetch origin
+    git switch main
+    git pull --ff-only
     docker compose up -d --build
     ```
 
@@ -115,7 +130,7 @@ docker compose up -d
 
 ## セキュリティチェックリスト
 
-以下の既定値はセキュリティ変更を含む `main` の開発版に適用されます。以前のリリースでは既定値が異なる場合があります。
+以下は `v1.2.0` 以降の既定値です。
 
 - `SESSION_SECRET` に長いランダムな値を設定し、公開せず固定する。
 - 追加登録を許可するときだけ `DISABLE_REGISTRATION=0` にする。最初のアカウントは作成できます。

@@ -6,7 +6,7 @@ icon: lucide/code
 
 Tally の REST API は `/api/v1` から利用できます。リクエスト先はドキュメントサイトではなく、稼働中の Tally です。Docker の既定ポートは `6400` です。
 
-!!! note "開発版の機能を含みます"
+!!! note "v1.2.0 以降で利用できます"
     接続先に実装されている操作は、その Tally の `/openapi.json` で確認できます。
 
 ## 認証

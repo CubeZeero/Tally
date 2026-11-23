@@ -7,7 +7,7 @@ icon: lucide/code
 Tally serves the REST API under `/api/v1` on your running instance. The default
 Docker port is `6400`.
 
-!!! note "Includes features from development builds"
+!!! note "Available in v1.2.0 and later"
     Check `/openapi.json` on your running instance for supported operations.
 
 ## Authentication

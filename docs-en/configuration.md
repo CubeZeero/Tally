@@ -37,7 +37,7 @@ In the app's **Settings** screen you can change the following:
 If you expose Tally to the internet:
 
 1. Set a strong `SESSION_SECRET` (see [Getting Started](getting-started.md)).
-2. Development builds disable new sign-ups after initial setup by default. On earlier releases, set `DISABLE_REGISTRATION=1` and run `docker compose up -d`.
+2. Starting with `v1.2.0`, Tally disables new sign-ups after initial setup by default. On earlier releases, set `DISABLE_REGISTRATION=1` and run `docker compose up -d`.
 3. Put it behind HTTPS (a reverse proxy or Tailscale). Tally automatically adds
    the `Secure` attribute to session cookies when it detects
    `x-forwarded-proto: https`.

@@ -33,7 +33,7 @@ Tally の設定は2種類あります。**サーバー側の環境変数**（コ
 Tally をインターネットに公開する場合:
 
 1. 強い `SESSION_SECRET` を設定する（[はじめに](getting-started.md) を参照）。
-2. `DISABLE_REGISTRATION=1` に設定し、`docker compose up -d` で反映する。開発版ではこれが既定値。
+2. `DISABLE_REGISTRATION=1` に設定し、`docker compose up -d` で反映する。`v1.2.0` 以降ではこれが既定値です。
 3. HTTPS の背後に置く（リバースプロキシまたは Tailscale）。Tally は
    `x-forwarded-proto: https` を検知すると、自動でセッション Cookie に
    `Secure` を付与します。

@@ -7,7 +7,7 @@ icon: lucide/history
 Tally のリリース履歴です。各バージョンは
 [GitHub のタグ](https://github.com/CubeZeero/Tally/tags) に対応します。
 
-## v1.2.0
+## v1.2.0 — 2026-11-24 { #v120 }
 
 ### 新機能
 

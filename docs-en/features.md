@@ -83,7 +83,7 @@ Your SQLite database is backed up safely on a regular schedule. See
 
 ## Update notification
 
-Tally compares the running version against the latest GitHub tag and shows a
+Tally compares the running version against the latest stable GitHub tag and shows a
 **banner at the top** when a newer version is available (the About page also
 shows the current/latest version). Dismissing the banner with × suppresses it
 for that version until the next release.
@@ -115,8 +115,8 @@ for that version until the next release.
 ## Multi-user
 
 Each account keeps its subscriptions, categories, payment methods, and
-settings completely separate. The first account inherits any existing data,
-and `DISABLE_REGISTRATION=1` blocks additional sign-ups. This is the default on the development branch.
+settings completely separate. The first account inherits unassigned data from legacy single-user versions,
+and `DISABLE_REGISTRATION=1` blocks additional sign-ups. This is the default starting with `v1.2.0`.
 
 ## Language & theme
 

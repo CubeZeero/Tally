@@ -6,7 +6,7 @@ icon: lucide/circle-help
 
 ??? question "Is Tally single-user or multi-user?"
     Multi-user. Each account keeps its own subscriptions, categories, payment
-    methods, and settings. The first account inherits any existing data.
+    methods, and settings. The first account inherits unassigned data from legacy single-user versions.
 
 ??? question "I'm logged out every time the container restarts."
     You haven't set a fixed `SESSION_SECRET`, so Tally is using a random
@@ -42,7 +42,7 @@ icon: lucide/circle-help
     "Add to Home Screen" option (push notifications are not used).
 
 ??? question "How do I stop other people from signing up?"
-    Development builds disable new sign-ups after initial setup by default. On earlier releases, set `DISABLE_REGISTRATION=1` and run `docker compose up -d`.
+    Starting with `v1.2.0`, Tally disables new sign-ups after initial setup by default. On earlier releases, set `DISABLE_REGISTRATION=1` and run `docker compose up -d`.
     The first account can always be created, for initial setup.
 
 ??? question "It says it can't connect to Docker (Colima)."

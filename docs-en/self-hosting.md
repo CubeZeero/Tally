@@ -18,10 +18,22 @@ version tags (e.g. `v1.0.0`).
     # First time
     git clone -b stable https://github.com/CubeZeero/Tally.git
     cd Tally
-    # Update
-    git pull
+    # Update while on stable
+    git pull --ff-only
     docker compose up -d --build
     ```
+
+    **Switching back from `main` or a version tag.** Run these commands in the existing Tally checkout. A plain `git pull` on `main` updates the development branch.
+
+    ```bash
+    git remote set-branches --add origin stable
+    git fetch origin
+    git switch stable
+    git pull --ff-only
+    docker compose up -d --build
+    ```
+
+    The first two commands also make `stable` available in a single-branch clone. If the development build already migrated the database beyond what the stable release supports, restore the backup taken before switching to development.
 
 === "Pin a version"
 
@@ -30,7 +42,7 @@ version tags (e.g. `v1.0.0`).
 
     ```bash
     git fetch --tags
-    git checkout v1.0.0
+    git switch --detach v1.2.0
     docker compose up -d --build
     ```
 
@@ -39,7 +51,10 @@ version tags (e.g. `v1.0.0`).
     Try the latest in-development code (not guaranteed to be stable).
 
     ```bash
-    git checkout main && git pull
+    git remote set-branches --add origin main
+    git fetch origin
+    git switch main
+    git pull --ff-only
     docker compose up -d --build
     ```
 
@@ -118,7 +133,7 @@ Restore by putting the file back into the volume and restarting. The app's
 
 ## Security checklist
 
-These defaults apply to the hardened development build on `main`. Earlier releases may have different defaults.
+These defaults apply to `v1.2.0` and later.
 
 - Keep `SESSION_SECRET` stable and private.
 - Keep `DISABLE_REGISTRATION=1` unless you want to allow additional users. The first account remains available for setup.

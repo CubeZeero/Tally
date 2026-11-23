@@ -9,7 +9,7 @@ mounted volume, so it persists across restarts and updates.
 
 
 !!! note "Stable and development builds"
-    Use `stable` for normal installation. The `TALLY_*` networking and notification settings below apply to the hardened development build on `main`. For a pinned release, check its bundled `.env.example` and `docker-compose.yml`.
+    Use `stable` for normal installation. The `TALLY_*` networking and notification settings below are available in `v1.2.0` and later. For a pinned release, check its bundled `.env.example` and `docker-compose.yml`.
 
 ## Prerequisites
 
@@ -52,7 +52,7 @@ alone is enough to get Tally running, but it's smoother to also decide on
 | `BACKUP_INTERVAL_HOURS` | Automatic backup interval (hours) | `24` |
 | `BACKUP_KEEP` | Number of generations to keep (oldest deleted once exceeded) | `7` |
 | `BACKUP_DIR` | Backup destination | `backups/` in the same volume as the DB |
-| `UPDATE_CHECK` | Shows a "new version available" banner by comparing against the latest GitHub tag. Set to `0` to disable (stops the periodic request to api.github.com) | `1` (on) |
+| `UPDATE_CHECK` | Shows a "new version available" banner by comparing against the latest stable GitHub tag. Set to `0` to disable (stops the periodic request to api.github.com) | `1` (on) |
 | `TALLY_BIND_ADDRESS` | Optional. Restrict the published port to a specific host IP, such as `127.0.0.1` or the server’s LAN or Tailscale IP | Unset (all interfaces) |
 | `TALLY_PUBLIC_URL` | External origin used by MCP OAuth and generated MCP links, such as `https://tally.example.com` | Inferred from the request |
 | `TALLY_NOTIFICATION_ORIGINS` | Comma-separated list of allowed custom webhook origins, including any nonstandard port | Empty |
@@ -90,7 +90,7 @@ Open <http://localhost:6400>. On first run, create an account (username +
 password). Your data is stored only on your server.
 
 !!! tip "The first account"
-    The first account you create inherits all existing data. After that,
+    The first account you create inherits unassigned data from legacy single-user versions. After that,
     set `DISABLE_REGISTRATION=0` if you want to allow further sign-ups.
 
 ??? note "Starting with `docker run`"

@@ -12,7 +12,6 @@ Copyright &copy; 2026 CubeZeero — Tally is licensed under AGPL-3.0
 
 repo_url = "https://github.com/CubeZeero/Tally"
 repo_name = "CubeZeero/Tally"
-edit_uri = "edit/main/wiki/docs-en/"
 
 nav = [
   { "Home" = "index.md" },

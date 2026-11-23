@@ -116,7 +116,7 @@ for that version until the next release.
 
 Each account keeps its subscriptions, categories, payment methods, and
 settings completely separate. The first account inherits any existing data,
-and further sign-ups can be locked with `DISABLE_REGISTRATION=1`.
+and `DISABLE_REGISTRATION=1` blocks additional sign-ups. This is the default on the development branch.
 
 ## Language & theme
 

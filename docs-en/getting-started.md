@@ -8,7 +8,8 @@ Tally runs as a single Docker container. Data is stored in SQLite on a
 mounted volume, so it persists across restarts and updates.
 
 
-Docker Compose binds to loopback by default. Set `TALLY_BIND_ADDRESS` to a reachable host IP for LAN or Tailscale.
+!!! note "Stable and development builds"
+    Use `stable` for normal installation. The `TALLY_*` networking and notification settings below apply to the hardened development build on `main`. For a pinned release, check its bundled `.env.example` and `docker-compose.yml`.
 
 ## Prerequisites
 
@@ -52,7 +53,16 @@ alone is enough to get Tally running, but it's smoother to also decide on
 | `BACKUP_KEEP` | Number of generations to keep (oldest deleted once exceeded) | `7` |
 | `BACKUP_DIR` | Backup destination | `backups/` in the same volume as the DB |
 | `UPDATE_CHECK` | Shows a "new version available" banner by comparing against the latest GitHub tag. Set to `0` to disable (stops the periodic request to api.github.com) | `1` (on) |
+| `TALLY_BIND_ADDRESS` | Optional. Restrict the published port to a specific host IP, such as `127.0.0.1` or the server’s LAN or Tailscale IP | Unset (all interfaces) |
+| `TALLY_PUBLIC_URL` | External origin used by MCP OAuth and generated MCP links, such as `https://tally.example.com` | Inferred from the request |
+| `TALLY_NOTIFICATION_ORIGINS` | Comma-separated list of allowed custom webhook origins, including any nonstandard port | Empty |
+| `TALLY_SMTP_DESTINATIONS` | Comma-separated list of allowed per-user SMTP `host:port` pairs | Empty |
 | `PORT` | Listening port | `6400` |
+
+!!! tip "Restrict the listening address"
+    Leave `TALLY_BIND_ADDRESS` unset to publish on all host interfaces, including LAN and Tailscale. For local-only access, add `TALLY_BIND_ADDRESS=127.0.0.1` to `.env`. To listen only on Tailscale, set it to the IP returned by `tailscale ip -4` on the Tally server. Apply the change with `docker compose up -d`.
+
+Compose reads `.env` for substitution. To customize the `SMTP_*`, `BACKUP_*` or `UPDATE_CHECK` runtime settings, also pass them in the service's `environment` section. To change the host port, edit the published port in `ports`.
 
 !!! important "Set `SESSION_SECRET` before launch"
     Set `SESSION_SECRET` **before the first `docker compose up`**. If you
@@ -91,7 +101,7 @@ password). Your data is stored only on your server.
     docker build -t tally .
     docker run -d \
       --name tally \
-      -p 127.0.0.1:6400:6400 \
+      -p 6400:6400 \
       -e SESSION_SECRET="$(openssl rand -base64 32)" \
       -e TZ="Asia/Tokyo" \
       -v tally-data:/data \

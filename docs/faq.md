@@ -40,7 +40,7 @@ icon: lucide/circle-help
     インストールできます（プッシュ通知は使いません）。
 
 ??? question "他の人が登録できないようにするには？"
-    自分のアカウントを作成後、`DISABLE_REGISTRATION=1` を設定して再起動します。
+    開発版では初回セットアップ後の新規登録は既定で無効です。以前の版では `DISABLE_REGISTRATION=1` を設定し、`docker compose up -d` で反映します。
     最初のアカウントは、初期セットアップのため常に作成できます。
 
 ??? question "Docker（Colima）に接続できないと表示されます。"

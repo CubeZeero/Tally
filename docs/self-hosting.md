@@ -25,7 +25,7 @@ Tally は起動時に追加的なスキーママイグレーションを自動�
 
 === "バージョンを固定"
 
-    特定リリースに固定、または以前の版へロールバックしたい場合はタグを使います。
+    特定リリースに固定するときはタグを使います。古い版に戻す場合は、更新前のDBバックアップを使ってください。
 
     ```bash
     git fetch --tags
@@ -51,16 +51,22 @@ Tally は起動時に追加的なスキーママイグレーションを自動�
 ```bash
 # 1. 保存先ディレクトリを作成
 sudo mkdir -p /mnt/storage/tally/data
+```
 
-# 2. .env に指定
-echo "TALLY_DATA_DIR=/mnt/storage/tally/data" >> .env
+`.env` に次の値を設定します。
 
-# 3. 起動（既存コンテナは再作成）
+```dotenv
+TALLY_DATA_DIR=/mnt/storage/tally/data
+```
+
+設定を反映して起動します。
+
+```bash
 docker compose up -d --build
 ```
 
 これで `/mnt/storage/tally/data/tally.db`（DB）と `.../backups/`（自動バックアップ）
-がそのディレクトリに置かれ、サーバ内蔵ディスクにはデータが残りません。`DATABASE_URL`
+が指定したディレクトリに保存されます。切り替え前のボリュームには既存データが残ります。`DATABASE_URL`
 は `file:/data/tally.db` のまま変更不要です（`/data` はコンテナ内パスで、その実体を
 `TALLY_DATA_DIR` が決めます）。
 
@@ -70,8 +76,8 @@ docker compose up -d --build
     あります。
 
 !!! note "既存データの移行"
-    すでに名前付きボリュームで運用している場合は、切り替え前に `tally.db` を
-    新しいディレクトリへコピーしてください（例:
+    名前付きボリュームから移行する場合は、Tally を停止して書き込みを止めてから、
+    切り替え前に `tally.db` を新しいディレクトリへコピーしてください（例:
     `docker compose cp tally:/data/tally.db /mnt/storage/tally/data/tally.db`）。
 
 ## バックアップ
@@ -99,7 +105,9 @@ docker compose cp tally:/data/backups ./tally-backups
 すべては 1 つの SQLite ファイルに保存されています:
 
 ```bash
+docker compose stop tally
 docker compose cp tally:/data/tally.db ./tally-backup.db
+docker compose up -d
 ```
 
 ファイルをボリュームに戻して再起動すれば復元できます。アプリ内の
@@ -107,28 +115,21 @@ docker compose cp tally:/data/tally.db ./tally-backup.db
 
 ## セキュリティチェックリスト
 
-- [x] 強く固定の `SESSION_SECRET` を設定する（コミットしない）。
-- [x] HTTPS で配信する（リバースプロキシまたは Tailscale）。リクエストが
-      `x-forwarded-proto: https` で届くとセッション Cookie に `Secure` が付与
-      されます。
-- [x] アカウント作成後、`DISABLE_REGISTRATION=1` で新規登録を止める。
-- [x] 送信先 Webhook（Discord / 汎用 / ntfy）は任意ホストを許可 — URL は自分で
-      管理する（Slack のみ `hooks.slack.com` に限定）。
-- [x] パスワードは bcrypt でハッシュ化、セッションは署名付き JWT。
+以下の既定値はセキュリティ変更を含む `main` の開発版に適用されます。以前のリリースでは既定値が異なる場合があります。
 
-!!! warning "インターネット公開時の注意"
-    初期セットアップができるよう、登録はデフォルトで開放されています。
-    インスタンスがインターネットから到達可能な場合は、自分のアカウントを作成
-    したらすぐに `DISABLE_REGISTRATION=1` でロックしてください。
+- `SESSION_SECRET` に長いランダムな値を設定し、公開せず固定する。
+- 追加登録を許可するときだけ `DISABLE_REGISTRATION=0` にする。最初のアカウントは作成できます。
+- Compose は既定で全インターフェースにポートを公開する。公開範囲を絞る場合は `TALLY_BIND_ADDRESS` に `127.0.0.1` またはサーバー自身の LAN・Tailscale IP を指定する。
+- HTTPSのリバースプロキシを使う場合は `TALLY_PUBLIC_URL` に外部オリジンを設定し、プロキシから元のスキームを転送する。
+- カスタムWebhookとユーザー別SMTPは接続先を明示的に許可する。[通知](notifications.md)を参照。
+
+### セキュリティ変更を含む版に更新
+
+更新後は再ログインし、OAuthクライアントを再認可してください。以前のキー付きMCP URLは、`/api/mcp` とAuthorizationヘッダーに切り替えます。既存のAPIキーはDockerでの移行後もヘッダーで使えます。[MCP連携](mcp.md)を参照。
 
 ## パスワードを忘れた場合
 
-ユーザー一覧を確認したり、ハッシュを消してパスワードをリセット（次回ログイン
-時に再設定）できます。例 — ユーザー名の一覧:
-
-```bash
-docker compose exec -T tally node -e "const{PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.user.findMany().then(u=>{console.log(u.map(x=>x.username));return p.\$disconnect()})"
-```
+パスワードを回復する組み込み機能はありません。パスワードハッシュを削除するとログインできなくなります。
 
 ## タイムゾーン
 

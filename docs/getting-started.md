@@ -8,7 +8,8 @@ Tally は単一の Docker コンテナとして動作します。データはマ
 上の SQLite に保存されるため、再起動やアップデートをしても保持されます。
 
 
-Docker Compose は既定でループバックにバインドします。LAN・Tailscale から接続する場合は `TALLY_BIND_ADDRESS` に到達可能なホスト IP を指定してください。
+!!! note "安定版と開発版"
+    通常の導入には `stable` を使います。このページのネットワーク・通知関連の `TALLY_*` 設定は、セキュリティ変更を含む `main` の開発版に適用されます。特定のリリースを使う場合は、同梱の `.env.example` と `docker-compose.yml` を確認してください。
 
 ## 前提
 
@@ -51,7 +52,16 @@ openssl rand -base64 32
 | `BACKUP_KEEP` | 保持する世代数（超過分は古いものから削除） | `7` |
 | `BACKUP_DIR` | バックアップの保存先 | DB と同じボリューム内の `backups/` |
 | `UPDATE_CHECK` | 最新の GitHub タグと比較して「新バージョンあり」バナーを表示。`0` で無効化（api.github.com への定期アクセスを停止） | `1`（有効） |
+| `TALLY_BIND_ADDRESS` | 任意。ポート `6400` の公開先を `127.0.0.1` やサーバー自身の LAN・Tailscale IP に限定 | 未設定（全インターフェース） |
+| `TALLY_PUBLIC_URL` | MCP の OAuth と接続 URL に使う外部オリジン。例 `https://tally.example.com` | リクエストから推定 |
+| `TALLY_NOTIFICATION_ORIGINS` | カスタム Webhook で許可するオリジンをカンマ区切りで指定。非標準ポートも含める | 空欄 |
+| `TALLY_SMTP_DESTINATIONS` | ユーザー別 SMTP で許可する `ホスト:ポート` をカンマ区切りで指定 | 空欄 |
 | `PORT` | 待ち受けポート | `6400` |
+
+!!! tip "待ち受け先を絞る"
+    未設定なら、LAN・Tailscale を含めホストの全インターフェースで待ち受けます。同じマシンからだけ接続するなら、`.env` に `TALLY_BIND_ADDRESS=127.0.0.1` を設定します。Tailscale に限定するなら、Tally サーバー上で `tailscale ip -4` を実行して得た IP を指定します。変更は `docker compose up -d` で反映します。
+
+Compose の `.env` は変数展開に使います。`SMTP_*`、`BACKUP_*`、`UPDATE_CHECK` を変更する場合は、対象の変数をサービスの `environment` にも渡します。ホスト側のポートは `ports` の公開ポートを変更します。
 
 !!! important "起動前に `SESSION_SECRET` を設定"
     `SESSION_SECRET` は**最初の `docker compose up` より前に**設定してください。
@@ -88,7 +98,7 @@ docker compose up -d --build
     docker build -t tally .
     docker run -d \
       --name tally \
-      -p 127.0.0.1:6400:6400 \
+      -p 6400:6400 \
       -e SESSION_SECRET="$(openssl rand -base64 32)" \
       -e TZ="Asia/Tokyo" \
       -v tally-data:/data \

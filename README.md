@@ -1,78 +1,29 @@
 # Tally Wiki
 
-Documentation site for Tally, built with [Zensical](https://zensical.org)
-(the static site generator from the Material for MkDocs team) and deployed to
-**Cloudflare Pages**.
+The Japanese and English [Tally documentation](https://tally.cubezeero.com/) is built with Zensical. The `wiki` branch has the documentation and build config at its root.
 
-## Languages
+## Local preview
 
-The site is bilingual. Each language is a separately-built site linked by the
-header language switcher:
-
-| Language | Docs | Config | Output | URL |
-| --- | --- | --- | --- | --- |
-| Japanese | `docs/` | `zensical.toml` | `site/` | `/` |
-| English | `docs-en/` | `zensical.en.toml` | `site/en/` | `/en/` |
-
-## Local development
+Run these commands from the Wiki worktree. The Python version is specified in `.python-version`.
 
 ```bash
-cd wiki
-python3 -m venv .venv && source .venv/bin/activate   # Python 3.10+
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# Japanese (default)
-zensical serve                        # preview at http://localhost:8000
-# English
-zensical serve -f zensical.en.toml    # preview the English site
-
-# Build both languages into ./site (ja) and ./site/en (en)
-zensical build && zensical build -f zensical.en.toml
+zensical build
+zensical build -f zensical.en.toml
+python -m http.server 4896 --bind 127.0.0.1 --directory site
 ```
 
-## Deploy to Cloudflare Pages
+Open `http://localhost:4896/` for Japanese or `http://localhost:4896/en/` for English. Rebuild after editing either language. For single-language live reload, use `zensical serve` and pass `-f zensical.en.toml` for English.
 
-### Option A — Git integration (recommended, no CI secrets)
+## Cloudflare deployment
 
-In the Cloudflare dashboard: **Workers & Pages → Create → Pages → Connect to
-Git**, pick the `CubeZeero/Tally` repo, then set:
+Cloudflare Workers Builds deploys the `wiki` branch. Leave the root directory field blank. Use the following settings for the `tally` Worker.
 
 | Setting | Value |
 | --- | --- |
-| Project name | `tally-wiki` |
-| Production branch | `main` |
-| Framework preset | None |
-| Root directory | `wiki` |
+| Branch | `wiki` |
 | Build command | `pip install -r requirements.txt && zensical build && zensical build -f zensical.en.toml` |
-| Build output directory | `site` |
-| Environment variable | `PYTHON_VERSION` = `3.12` |
-
-Cloudflare rebuilds and deploys on every push. (A `.python-version` file is also
-included so the version is pinned.)
-
-After the first deploy, set `site_url` in `zensical.toml` to your Pages URL
-(e.g. `https://tally.cubezeero.com/`) so instant navigation/prefetch work.
-
-### Option B — GitHub Actions
-
-A workflow at `.github/workflows/wiki.yml` builds the site and deploys via
-Wrangler on pushes that touch `wiki/**`. Add these repository secrets:
-
-- `CLOUDFLARE_API_TOKEN` — a token with the *Cloudflare Pages: Edit* permission
-- `CLOUDFLARE_ACCOUNT_ID` — your account ID
-
-Create the Pages project once (matching `name` in `wrangler.toml`):
-
-```bash
-cd wiki
-npx wrangler pages project create tally-wiki --production-branch main
-```
-
-### Option C — manual one-off
-
-```bash
-cd wiki
-pip install -r requirements.txt
-zensical build && zensical build -f zensical.en.toml
-npx wrangler pages deploy site --project-name tally-wiki
-```
+| Deploy command | `npx wrangler deploy` |
+| Static assets | `site/`, configured in `wrangler.toml` |

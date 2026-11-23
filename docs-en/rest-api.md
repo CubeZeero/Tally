@@ -98,5 +98,6 @@ It checks for matching names in existing subscriptions and within the input.
 | `403` | A REST API write key is required |
 | `404` | The requested item does not exist or belong to your account |
 | `409` | The name already exists or a label in use needs a replacement |
+| `413` | Request body exceeds 1 MiB |
 
 For AI assistants, see [MCP integration](mcp.md).

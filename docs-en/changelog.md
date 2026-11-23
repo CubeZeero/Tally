@@ -7,6 +7,28 @@ icon: lucide/history
 Release history for Tally. Each version corresponds to a
 [GitHub tag](https://github.com/CubeZeero/Tally/tags).
 
+## v1.2.0
+
+### New features
+
+- **MCP integration** — Search subscriptions and retrieve spending totals and payment schedules from an AI assistant. With OAuth write access, create, edit, pause, resume, and duplicate subscriptions and manage categories and payment methods. [MCP integration](mcp.md)
+- **REST API** — Read, create, edit, and delete subscriptions. Retrieve scheduled charges in a date range, trial and review reminders, and spending by category or payment method. Preview CSV and JSON imports. [REST API](rest-api.md)
+- **Development build label** — The About page identifies development builds. Update checks detect the stable release with the same version number when it becomes available.
+
+### Security and improvements
+
+- Separated web sessions from MCP OAuth tokens and made write access opt-in.
+- Hashed API keys, updated dependencies, and added request size limits and HTTP security headers. Docker runs the app as a non-root user after initialization.
+- Unified billing date calculations and serialized settings autosave. Failed replacement imports preserve existing data.
+
+### Before upgrading
+
+- **LAN and Tailscale** — Docker Compose continues to publish port `6400` on all interfaces by default. Set `TALLY_BIND_ADDRESS` in `.env` only if you want to restrict listening to a specific IP.
+- **Sign-in and MCP** — Sign in and reauthorize OAuth clients after the upgrade. Switch old URLs containing an API key to `/api/mcp` with a Bearer header. Existing API keys continue to work in the header.
+- **Notifications and registration** — Allowlist custom webhook origins and per-user SMTP destinations. Set `DISABLE_REGISTRATION=0` to allow sign-ups after the first account.
+
+See [Getting started](getting-started.md) and [Self-hosting](self-hosting.md) for full instructions.
+
 ## v1.1.2 — 2026-07-18
 
 - **Settings auto-save** — removed the Save button; changes persist immediately

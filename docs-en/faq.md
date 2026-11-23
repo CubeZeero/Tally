@@ -42,7 +42,7 @@ icon: lucide/circle-help
     "Add to Home Screen" option (push notifications are not used).
 
 ??? question "How do I stop other people from signing up?"
-    After creating your own account, set `DISABLE_REGISTRATION=1` and restart.
+    Development builds disable new sign-ups after initial setup by default. On earlier releases, set `DISABLE_REGISTRATION=1` and run `docker compose up -d`.
     The first account can always be created, for initial setup.
 
 ??? question "It says it can't connect to Docker (Colima)."

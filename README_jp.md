@@ -69,7 +69,7 @@ docker compose up -d --build
 docker build -t tally .
 docker run -d \
   --name tally \
-  -p 127.0.0.1:6400:6400 \
+  -p 6400:6400 \
   -e SESSION_SECRET="$(openssl rand -base64 32)" \
   -e TZ="Asia/Tokyo" \
   -v tally-data:/data \
@@ -98,7 +98,7 @@ docker run -d \
 
 ### セキュリティ設定
 
-Compose は既定で `127.0.0.1` にバインドします。LAN や Tailscale から接続する場合は、`TALLY_BIND_ADDRESS` で公開するホスト IP を指定します。リバースプロキシ経由で OAuth を使う場合は、外部向け HTTPS オリジンを `TALLY_PUBLIC_URL` に設定してください。
+Compose は既定でホストの全インターフェースにポート `6400` を公開します。接続先を絞る場合は、任意で `.env` に `TALLY_BIND_ADDRESS=127.0.0.1` またはサーバー自身の LAN・Tailscale IP を指定します。リバースプロキシ経由で OAuth を使う場合は、外部向け HTTPS オリジンを `TALLY_PUBLIC_URL` に設定してください。
 
 カスタム Webhook は `TALLY_NOTIFICATION_ORIGINS`、ユーザー別 SMTP は `TALLY_SMTP_DESTINATIONS` で接続先を許可します。指定例は [.env.example](.env.example) にあります。
 

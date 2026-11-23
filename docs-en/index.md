@@ -29,6 +29,7 @@ web browser, and get up and running easily with Docker.
 - [Getting Started](getting-started.md) — launch with Docker + configure environment variables
 - [Configuration](configuration.md) — in-app (per-user) settings
 - [Features](features.md) — what Tally can do
+- [MCP integration](mcp.md) and [REST API](rest-api.md) — connect Tally to other tools
 - [Notifications](notifications.md) — Discord / email / webhook / Slack / ntfy
 - [Self-Hosting](self-hosting.md) — updates, backups, security
 - [FAQ](faq.md)

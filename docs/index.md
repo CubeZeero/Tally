@@ -29,6 +29,7 @@ icon: lucide/rocket
 - [はじめに](getting-started.md) — Docker で起動＋環境変数の設定
 - [設定](configuration.md) — アプリ内（ユーザーごと）の設定
 - [機能](features.md) — Tally でできること
+- [MCP 連携](mcp.md)・[REST API](rest-api.md) — 外部ツールから Tally を利用
 - [通知](notifications.md) — Discord / メール / Webhook / Slack / ntfy
 - [セルフホスト](self-hosting.md) — 更新・バックアップ・セキュリティ
 - [よくある質問](faq.md)

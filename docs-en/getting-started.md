@@ -7,6 +7,9 @@ icon: lucide/play
 Tally runs as a single Docker container. Data is stored in SQLite on a
 mounted volume, so it persists across restarts and updates.
 
+
+Docker Compose binds to loopback by default. Set `TALLY_BIND_ADDRESS` to a reachable host IP for LAN or Tailscale.
+
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) (with the Compose plugin)
@@ -42,7 +45,7 @@ alone is enough to get Tally running, but it's smoother to also decide on
 | `DATABASE_URL` | SQLite file location | `file:/data/tally.db` (Docker) |
 | `TALLY_DATA_DIR` | Host directory for the data (DB + backups). Point at external storage; unset uses a Docker-managed named volume | (named volume `tally-data`) |
 | `TZ` | Timezone for the notification scheduler | `Asia/Tokyo` |
-| `DISABLE_REGISTRATION` | Set to `1` to disable new sign-ups after the first account is created | (unset) |
+| `DISABLE_REGISTRATION` | Set to `0` to allow additional accounts | `1` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | SMTP settings for email notifications (**fallback**; per-user settings take priority) | (unset) |
 | `BACKUP_ENABLED` | Enable/disable automatic backups | `true` |
 | `BACKUP_INTERVAL_HOURS` | Automatic backup interval (hours) | `24` |
@@ -64,7 +67,7 @@ alone is enough to get Tally running, but it's smoother to also decide on
 environment:
   SESSION_SECRET: "${SESSION_SECRET:-}"
   TZ: "${TZ:-Asia/Tokyo}"
-  DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-}"
+  DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-1}"
 ```
 
 ## 3. Build & start
@@ -78,7 +81,7 @@ password). Your data is stored only on your server.
 
 !!! tip "The first account"
     The first account you create inherits all existing data. After that,
-    set `DISABLE_REGISTRATION=1` if you want to stop further sign-ups.
+    set `DISABLE_REGISTRATION=0` if you want to allow further sign-ups.
 
 ??? note "Starting with `docker run`"
     If you're not using Docker Compose, pass the environment variables
@@ -88,7 +91,7 @@ password). Your data is stored only on your server.
     docker build -t tally .
     docker run -d \
       --name tally \
-      -p 6400:6400 \
+      -p 127.0.0.1:6400:6400 \
       -e SESSION_SECRET="$(openssl rand -base64 32)" \
       -e TZ="Asia/Tokyo" \
       -v tally-data:/data \

@@ -37,117 +37,21 @@ OAuth の同意画面で `tally:write` を許可すると、以下のツール�
 
 サブスクそのものの削除は [REST API](rest-api.md) から行えます。
 
-## 事前準備
+## クライアントを接続
 
-### 1. API キーを生成
+- **API キー（読み取り）** — **環境設定 → MCP 連携**で読み取りキーを発行し、発行時に控えます。クライアントの URL に `https://<host>/api/mcp` を指定し、`Authorization: Bearer <API キー>` を送ります。既存キーもアップグレード後にヘッダーで使えます。
+- **OAuth（読み取り・書き込み）** — 同じエンドポイントを登録し、ログインして認可します。HTTPS を使い、外部からアクセスするオリジンを `TALLY_PUBLIC_URL` に設定します。書き込みは `tally:write` を明示的に要求して許可した場合に使えます。
 
-**設定 → MCP 連携** で **API キーを生成**します。生成後、3 種類の接続情報が
-表示されます（後述）。
-
-### 2. 接続経路を選ぶ
-
-MCP には **リモート**（インターネット越し）と **ローカル**（あなたの端末で動かす
-中継）の 2 系統があります。
-
-```mermaid
-flowchart TD
-    subgraph リモート["リモート（Streamable HTTP）"]
-      C1["ChatGPT / Claude / Cursor / VS Code"] -->|OAuth 2.1 or トークンURL| S["Tally /api/mcp"]
-    end
-    subgraph ローカル["ローカル（stdio）"]
-      C2["各デスクトップ / エディタ"] -->|stdio| B["mcp-remote（端末で実行）"] --> S
-    end
-```
-
-- **リモート**は AI サービス側から Tally に接続するため、**公開 HTTPS が必須**です
-  （[公開する](#https)を参照）。ChatGPT や claude.ai（web）はこちら。
-- **ローカル**は `mcp-remote` をあなたの端末で動かして中継するため、**公開は不要**。
-  tailnet や LAN 内だけの Tally でも使えます（Windsurf など OAuth 非対応クライアント
-  もこちら）。
-
-### 3. 接続方式は 3 つ
-
-**設定 → MCP 連携** に表示される URL/キーの使い分け:
-
-1. **OAuth 対応クライアント**（ChatGPT・各コネクタ）… エンドポイント
-   `https://<host>/api/mcp` を登録 → **ログイン画面で認可**。
-2. **トークン埋め込み URL**（認証 UI のない簡易コネクタ）…
-   `https://<host>/api/mcp/<API キー>` を URL 欄に貼る。
-3. **API キー（Bearer）**（Claude Code / mcp-remote）… `Authorization: Bearer <API キー>`。
-
-!!! info "読み取り／書き込み"
-    **① OAuth のみ書き込み可**（同意画面で `tally:write` を許可した場合）。
-    **②③（トークン URL / Bearer）は読み取り専用**です。
+キーを埋め込んだ旧 URL を設定済みの場合は、上記のいずれかに切り替えてください。アップグレード後は OAuth の再認可が必要です。
 
 ## LAN・Tailscale から接続
 
 手元の端末で動くクライアントが Streamable HTTP と HTTP URL、Bearer ヘッダーに対応していれば、`http://192.168.1.20:6400/api/mcp` や `http://100.x.x.x:6400/api/mcp` に読み取りキーで接続できます。独自ドメインは不要です。OAuth で接続する場合は HTTPS を使い、リバースプロキシから接続先のホスト名とスキームを正しく転送してください。
 
-## クライアント別の手順
+## クライアント別の設定
 
-=== "ChatGPT"
-
-    **必要要件:** 公開 HTTPS ＋ OAuth（ChatGPT は動的クライアント登録が必須で、
-    Bearer やトークン URL は使えません）。
-
-    1. **設定 → コネクタ（Apps & Connectors）→ カスタムコネクタを追加**。
-    2. **URL** に `https://<host>/api/mcp` を入力。
-    3. 追加すると Tally のログイン／認可画面が開くので、ログインして**許可**。
-
-=== "Claude Desktop / web"
-
-    **カスタムコネクタUIを使う場合**（OAuth）:
-
-    1. **設定 → コネクタ → カスタムコネクタを追加**。
-    2. **URL** に `https://<host>/api/mcp` を入力 → ログインして**許可**。
-
-    OAuth を使わず簡単に繋ぎたい場合は、URL 欄に
-    **トークン埋め込み URL** `https://<host>/api/mcp/<API キー>` を貼り、OAuth 欄は
-    空のままにします。
-
-    !!! note "無料プランはローカルのみ"
-        claude.ai の無料プランはリモート MCP に非対応です。**ローカル**タブの
-        `mcp-remote` 方式を使ってください。
-
-=== "Claude Code"
-
-    ```bash
-    # API キー（Bearer）
-    claude mcp add --transport http tally https://<host>/api/mcp \
-      --header "Authorization: Bearer <API キー>"
-
-    # または OAuth（ブラウザでログイン認可）
-    claude mcp add --transport http tally https://<host>/api/mcp
-    ```
-
-    Claude Code は端末から直接接続するため、**tailnet / LAN / localhost の URL でも
-    そのまま使えます**（公開不要）。
-
-=== "Cursor / VS Code"
-
-    リモート MCP サーバーとして `https://<host>/api/mcp` を追加します（どちらも
-    ネイティブ OAuth 対応。VS Code は GitHub Copilot 1.101 以降）。公開 HTTPS が
-    無い場合は**ローカル**タブの方式を使ってください。
-
-=== "ローカル（mcp-remote）"
-
-    どのデスクトップ／エディタでも、また **公開していない Tally（tailnet/LAN）**でも
-    使える方式です。設定ファイル（例: Claude Desktop の `claude_desktop_config.json`）
-    に以下を追加します:
-
-    ```json
-    {
-      "mcpServers": {
-        "tally": {
-          "command": "npx",
-          "args": ["-y", "mcp-remote", "https://<host>/api/mcp/<API キー>"]
-        }
-      }
-    }
-    ```
-
-    `mcp-remote` は**あなたの端末で実行**され、そこから Tally へ HTTPS 接続します。
-    Node.js / npx が必要です。設定後はアプリを**完全に再起動**してください。
+- Codex など HTTP ヘッダーを設定できるクライアントでは、**ストリーミング可能な HTTP** を選び、Tally のエンドポイントと読み取り用 Bearer ヘッダーを指定します。
+- クラウド上のコネクタや書き込み操作には OAuth を使い、クライアントから HTTPS エンドポイントに到達できるようにします。stdio 専用クライアントの場合は、HTTP ヘッダーを設定できるローカル中継を使います。
 
 ## 公開 HTTPS 化 { #https }
 
@@ -159,34 +63,13 @@ ChatGPT や claude.ai（web）のコネクタは **Anthropic / OpenAI 側から*
 - **リバースプロキシ ＋ Let's Encrypt**（Caddy / nginx）＋ 独自ドメイン。
 - **Tailscale Funnel** — `.ts.net` を公開 HTTPS 化。
 
-!!! danger "公開時のセキュリティ"
-    公開すると、**トークン埋め込み URL を知る者は誰でも読み取れます**（URL 自体が
-    鍵）。OAuth 方式なら URL に秘密は乗りません。公開範囲を絞れない場合は OAuth を
-    推奨します。到達できれば十分な用途（Desktop/エディタ）では**ローカル方式**で
-    公開を避けられます。
-
 !!! important "SESSION_SECRET を固定する"
     OAuth のトークンとログインセッションは `SESSION_SECRET` で署名されます。値を
     設定しないとプロセスごとにランダム生成され、**再起動のたびに再認可・再ログイン**
     が必要になります。安定運用には必ず設定してください（[設定](configuration.md)参照）。
 
-## トラブルシュート
+## トラブルシュートと失効
 
-- **「サーバーに接続できませんでした」**（コネクタ）… URL が**公開 HTTPS で到達可能**
-  か確認。tailnet / LAN 限定の URL は claude.ai（web）や各コネクタからは届きません。
-  その場合は**ローカル（mcp-remote）**方式へ。
-- **ChatGPT で追加できない** … ChatGPT は OAuth＋動的クライアント登録が必須です。
-  トークン URL や Bearer では追加できません。エンドポイント `.../api/mcp` を登録して
-  ください。
-- **再起動後に再ログインを求められる** … `SESSION_SECRET` が未設定です。固定値を
-  設定してください。
-- **ツールが出てこない**（mcp-remote）… アプリを完全に再起動。初回は `npx` の
-  ダウンロードで数十秒かかることがあります。
-
-## セキュリティと失効
-
-- MCP の書き込みには `tally:write` を許可した OAuth 接続が必要です。Bearer API キーとトークン URL は読み取り専用です。REST API 書き込みキーは REST 専用です。
-- アクセストークンは短命（既定 1 時間）、リフレッシュトークンは使用のたびに
-  ローテーションされます。
-- **API キーを失効**すると、そのキーによるトークン URL / Bearer 接続は無効になります
-  （**設定 → MCP 連携 → API キーを失効**）。
+- クラウド上のコネクタから接続できない場合は、設定した HTTPS エンドポイントにコネクタ側から到達できるか確認します。手元のクライアントなら、LAN・Tailscale 経由でも接続できます。
+- Bearer 接続が `401` を返す場合は、キーと `/api/mcp` の URL を確認してください。キーの再発行・失効により、それまでのキーは無効になります。
+- アップグレード後に OAuth が使えない場合は、ログインして再認可します。`SESSION_SECRET` を固定し、認可フローでは同じ外部オリジンを使ってください。

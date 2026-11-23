@@ -11,6 +11,11 @@ Tally は**支払い予定**（およびトライアル終了・予算超過・�
 対応チャンネル: **Discord** ・ **メール（SMTP）** ・ **汎用 Webhook** ・
 **Slack** ・ **ntfy**。すべてユーザーごとに設定でき、複数を同時に有効化できます。
 
+
+カスタムの HTTP 通知先は `TALLY_NOTIFICATION_ORIGINS` にオリジンを登録します。
+Discord、Slack、ntfy.sh は既定で許可されています。ユーザー別 SMTP は
+`TALLY_SMTP_DESTINATIONS` で `ホスト:ポート` を許可し、TLS で接続します。
+
 ## 仕組み
 
 ```mermaid
@@ -118,11 +123,10 @@ Slack の **Incoming Webhook** に送信します。
 2. 必要なら**アクセストークン**（任意）を設定。
 3. スマホの ntfy アプリで**同じトピックを購読**します。
 
-## 任意: cron 用エンドポイント
+## 既存の外部スケジューラー
 
-外部スケジューラー向けに、ユーザーごとのトークン付きエンドポイントも用意して
-います（内蔵スケジューラーがあるため通常は不要）:
+外部スケジューラー用の通知トークンを発行済みの場合は、POST の Bearer ヘッダーで引き続き使えます。新規アカウントでは内蔵スケジューラーを使います。
 
 ```bash
-curl "http://host:6400/api/notify?token=YOUR_TOKEN"
+curl -X POST -H "Authorization: Bearer ${TALLY_NOTIFY_TOKEN}" http://host:6400/api/notify
 ```

@@ -7,6 +7,9 @@ icon: lucide/play
 Tally は単一の Docker コンテナとして動作します。データはマウントしたボリューム
 上の SQLite に保存されるため、再起動やアップデートをしても保持されます。
 
+
+Docker Compose は既定でループバックにバインドします。LAN・Tailscale から接続する場合は `TALLY_BIND_ADDRESS` に到達可能なホスト IP を指定してください。
+
 ## 前提
 
 - [Docker](https://docs.docker.com/get-docker/)（Compose プラグイン付き）
@@ -41,7 +44,7 @@ openssl rand -base64 32
 | `DATABASE_URL` | SQLite ファイルの場所 | `file:/data/tally.db`（Docker） |
 | `TALLY_DATA_DIR` | データ（DB＋バックアップ）を置くホストのディレクトリ。外部ストレージを指定できる。未設定なら Docker 管理の名前付きボリューム | （名前付きボリューム `tally-data`） |
 | `TZ` | 通知スケジューラーのタイムゾーン | `Asia/Tokyo` |
-| `DISABLE_REGISTRATION` | `1` で最初のアカウント作成後の新規登録を無効化 | （未設定） |
+| `DISABLE_REGISTRATION` | `0` で追加アカウントの登録を許可 | `1` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | メール通知用の SMTP 設定（**フォールバック**。ユーザーごとの設定が優先） | （未設定） |
 | `BACKUP_ENABLED` | 自動バックアップの有効／無効 | `true` |
 | `BACKUP_INTERVAL_HOURS` | 自動バックアップの間隔（時間） | `24` |
@@ -62,7 +65,7 @@ openssl rand -base64 32
 environment:
   SESSION_SECRET: "${SESSION_SECRET:-}"
   TZ: "${TZ:-Asia/Tokyo}"
-  DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-}"
+  DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-1}"
 ```
 
 ## 3. ビルド & 起動
@@ -76,7 +79,7 @@ docker compose up -d --build
 
 !!! tip "最初のアカウント"
     最初に作成したアカウントが、既存データをすべて引き継ぎます。その後は、
-    追加登録を止めたい場合に `DISABLE_REGISTRATION=1` を設定してください。
+    追加登録を許可する場合に `DISABLE_REGISTRATION=0` を設定してください。
 
 ??? note "`docker run` で起動する場合"
     Docker Compose を使わない場合は、環境変数を `-e` で直接渡します。
@@ -85,7 +88,7 @@ docker compose up -d --build
     docker build -t tally .
     docker run -d \
       --name tally \
-      -p 6400:6400 \
+      -p 127.0.0.1:6400:6400 \
       -e SESSION_SECRET="$(openssl rand -base64 32)" \
       -e TZ="Asia/Tokyo" \
       -v tally-data:/data \

@@ -12,6 +12,11 @@ Supported channels: **Discord** · **email (SMTP)** · **generic webhook** ·
 **Slack** · **ntfy**. Each is configured per-user, and you can enable several
 at once.
 
+
+Custom HTTP notification origins must be allowlisted with `TALLY_NOTIFICATION_ORIGINS`.
+Discord, Slack, and ntfy.sh are allowed by default. Per-user SMTP requires an
+exact `host:port` in `TALLY_SMTP_DESTINATIONS` and uses TLS.
+
 ## How it works
 
 ```mermaid
@@ -130,11 +135,11 @@ Delivers **push notifications** to your smartphone (via
 2. Optionally set an **access token**, if needed.
 3. Subscribe to the same topic in the ntfy app on your phone.
 
-## Optional: cron endpoint
+## Existing external schedulers
 
-A per-user, token-authenticated endpoint is also available for external
-schedulers (not normally needed, since Tally has a built-in scheduler):
+External schedulers with an existing notification token can keep using it in
+the Bearer header of a POST request. New accounts use the built-in scheduler.
 
 ```bash
-curl "http://host:6400/api/notify?token=YOUR_TOKEN"
+curl -X POST -H "Authorization: Bearer ${TALLY_NOTIFY_TOKEN}" http://host:6400/api/notify
 ```

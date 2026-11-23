@@ -39,47 +39,12 @@ Approve `tally:write` on the OAuth consent screen to use these tools.
 
 Deleting a subscription is available through the [REST API](rest-api.md).
 
-## Before you start
+## Connect a client
 
-### 1. Generate an API key
+- **API key (read-only)** — in **Settings → MCP integration**, generate a read API key and copy it when issued. Set the client URL to `https://<host>/api/mcp` and send `Authorization: Bearer <API key>`. An existing key still works in the header after an upgrade.
+- **OAuth (read or write)** — register the same endpoint without a key, then sign in and approve access. Use HTTPS and set `TALLY_PUBLIC_URL` to the external origin. Write tools require explicitly requesting and approving `tally:write`.
 
-In **Settings → MCP integration**, click **Generate API key**. Three connection
-values are then shown (see below).
-
-### 2. Choose remote vs local
-
-MCP has two families: **remote** (over the internet) and **local** (a bridge you
-run on your own machine).
-
-```mermaid
-flowchart TD
-    subgraph Remote["Remote (Streamable HTTP)"]
-      C1["ChatGPT / Claude / Cursor / VS Code"] -->|OAuth 2.1 or token-URL| S["Tally /api/mcp"]
-    end
-    subgraph Local["Local (stdio)"]
-      C2["Any desktop / editor"] -->|stdio| B["mcp-remote (runs on your machine)"] --> S
-    end
-```
-
-- **Remote** means the AI service connects *to* Tally, so **public HTTPS is
-  required** (see [Exposing over HTTPS](#https)). ChatGPT and claude.ai (web) use this.
-- **Local** runs `mcp-remote` on your own machine, so **no public exposure is
-  needed** — it works even for a tailnet/LAN-only Tally (and for OAuth-less
-  clients like Windsurf).
-
-### 3. Three connection methods
-
-How to use the values shown in **Settings → MCP integration**:
-
-1. **OAuth clients** (ChatGPT, connectors) — register the endpoint
-   `https://<host>/api/mcp`; the client **signs you in to authorize**.
-2. **Token-in-URL** (simple connectors with no auth field) — paste
-   `https://<host>/api/mcp/<API key>` into the URL field.
-3. **API key (Bearer)** (Claude Code / mcp-remote) — `Authorization: Bearer <API key>`.
-
-!!! info "Read vs write"
-    **Only method 1 (OAuth) can write** — when you approve `tally:write` on the
-    consent screen. **Methods 2 and 3 (token-URL / Bearer) are read-only.**
+If a client previously used a URL with the key appended, update it to use one of these methods. After upgrading, OAuth clients must authorize again.
 
 ## Connect over a LAN or Tailscale
 
@@ -90,71 +55,10 @@ such as `http://192.168.1.20:6400/api/mcp` or
 domain. For OAuth, use an HTTPS endpoint and configure the proxy to forward the
 public host and scheme consistently.
 
-## Per-client setup
+## Client setup
 
-=== "ChatGPT"
-
-    **Requirements:** public HTTPS + OAuth (ChatGPT mandates Dynamic Client
-    Registration; bearer tokens and token-URLs are not accepted).
-
-    1. **Settings → Apps & Connectors → Add custom connector**.
-    2. Enter the **URL** `https://<host>/api/mcp`.
-    3. On adding, Tally's login/consent screen opens — sign in and **Approve**.
-
-=== "Claude Desktop / web"
-
-    **Using the custom-connector UI** (OAuth):
-
-    1. **Settings → Connectors → Add custom connector**.
-    2. Enter `https://<host>/api/mcp` → sign in and **Approve**.
-
-    To skip OAuth, paste the **token-in-URL**
-    `https://<host>/api/mcp/<API key>` into the URL field and leave the OAuth
-    fields blank.
-
-    !!! note "Free tier is local-only"
-        The claude.ai free tier does not support remote MCP. Use the **Local**
-        tab (`mcp-remote`).
-
-=== "Claude Code"
-
-    ```bash
-    # API key (Bearer)
-    claude mcp add --transport http tally https://<host>/api/mcp \
-      --header "Authorization: Bearer <API key>"
-
-    # or OAuth (browser sign-in)
-    claude mcp add --transport http tally https://<host>/api/mcp
-    ```
-
-    Claude Code connects directly from your machine, so **tailnet / LAN /
-    localhost URLs work as-is** (no public exposure needed).
-
-=== "Cursor / VS Code"
-
-    Add `https://<host>/api/mcp` as a remote MCP server (both support native
-    OAuth; VS Code needs GitHub Copilot 1.101+). Without public HTTPS, use the
-    **Local** tab.
-
-=== "Local (mcp-remote)"
-
-    Works with any desktop/editor client, and with a **non-public Tally
-    (tailnet/LAN)**. Add this to the client's config file (e.g. Claude Desktop's
-    `claude_desktop_config.json`):
-
-    ```json
-    {
-      "mcpServers": {
-        "tally": {
-          "command": "npx",
-          "args": ["-y", "mcp-remote", "https://<host>/api/mcp/<API key>"]
-        }
-      }
-    }
-    ```
-
-    `mcp-remote` **runs on your machine** and connects out to Tally over HTTPS.
-    Requires Node.js / npx. **Fully restart** the app after editing the config.
+- For Codex or another desktop client with HTTP header configuration, choose **Streamable HTTP**, enter the Tally endpoint, and set the Bearer header for read access.
+- For hosted connectors or write access, choose OAuth and make sure the client can reach the configured HTTPS endpoint. For a client that supports only stdio, use a local bridge that can supply the HTTP header.
 
 ## Exposing over HTTPS { #https }
 
@@ -166,35 +70,14 @@ exposing the web UI). Common options:
 - **Reverse proxy + Let's Encrypt** (Caddy / nginx) + your own domain.
 - **Tailscale Funnel** — publish a `.ts.net` host over HTTPS.
 
-!!! danger "Security when public"
-    Once public, **anyone who knows a token-in-URL can read your data** (the URL
-    is the secret). The OAuth method keeps no secret in the URL. If you can't
-    restrict access, prefer OAuth. For clients that connect locally
-    (Desktop/editors), the **Local** method avoids exposing anything.
-
 !!! important "Set a stable SESSION_SECRET"
     OAuth tokens and login sessions are signed with `SESSION_SECRET`. If it's
     unset, a random secret is generated per process and **everyone must
     re-authorize / re-login on every restart**. Set a stable value for
     production (see [Configuration](configuration.md)).
 
-## Troubleshooting
+## Troubleshooting and revocation
 
-- **"Couldn't connect to the server"** (connector) — check the URL is
-  **reachable over public HTTPS**. A tailnet/LAN-only URL is not reachable from
-  claude.ai (web) or hosted connectors; use the **Local (mcp-remote)** method.
-- **Can't add it in ChatGPT** — ChatGPT requires OAuth + Dynamic Client
-  Registration. Token-URL and Bearer won't work; register the endpoint
-  `.../api/mcp`.
-- **Re-login required after every restart** — `SESSION_SECRET` is unset. Set a
-  stable value.
-- **Tools don't appear** (mcp-remote) — fully restart the app; the first run may
-  take a few seconds to download `npx`.
-
-## Security & revocation
-
-- MCP write tools require OAuth with `tally:write`. Bearer API-key and token-in-URL connections are read-only. The separate REST write key is scoped to REST.
-- Access tokens are short-lived (1 hour by default); refresh tokens rotate on
-  every use.
-- **Revoking the API key** disables token-URL / Bearer connections made with it
-  (**Settings → MCP integration → Revoke API key**).
+- If a hosted connector cannot connect, verify that it can reach the configured HTTPS endpoint. A desktop client can instead connect over the LAN or tailnet.
+- If a Bearer request fails with `401`, check the key and the plain `/api/mcp` URL. Generate a replacement key when needed. Generating or revoking the key invalidates the previous one.
+- If OAuth stops working after upgrading, sign in and authorize again. Keep `SESSION_SECRET` stable and use the same external origin throughout the authorization flow.

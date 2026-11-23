@@ -20,7 +20,7 @@ Generate a key under **Settings → MCP integration** and send it in the
 | API key | Read operations and import previews |
 | REST API write key | Reads and changes to subscriptions, categories, and payment methods |
 
-Each key accesses only its owner's data and can be revoked independently.
+Each key accesses only its owner's data and can be revoked independently. Copy it when issued, as it is shown only once.
 Use HTTPS for remote requests and keep keys out of URLs and Git.
 
 ## Request examples

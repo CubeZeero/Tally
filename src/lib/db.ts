@@ -91,10 +91,6 @@ export async function getUser(userId: string) {
 export async function seedUserDefaults(userId: string, lang = "en") {
   const cats = DEFAULT_CATEGORIES[lang] ?? DEFAULT_CATEGORIES.en;
   const pms = DEFAULT_PAYMENT_METHODS[lang] ?? DEFAULT_PAYMENT_METHODS.en;
-  await prisma.user.update({
-    where: { id: userId },
-    data: { notifyToken: randomToken() },
-  });
   if ((await prisma.category.count({ where: { userId } })) === 0) {
     await prisma.category.createMany({
       data: cats.map((name, i) => ({ userId, name, sort: i })),

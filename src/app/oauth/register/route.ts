@@ -1,7 +1,9 @@
+import { readBody, BodyTooLargeError } from "@/lib/request-body";
+import { allowRequest } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 import {
   OAUTH_CORS,
-  DEFAULT_SCOPE,
+  grantScopes,
   isAllowedRedirectUri,
   randomToken,
   sha256hex,
@@ -24,22 +26,27 @@ export function OPTIONS() {
 }
 
 export async function POST(req: Request) {
+  if (!allowRequest("oauth-register", 30)) return err("temporarily_unavailable", "Too many registrations", 429);
   let body: Record<string, unknown>;
   try {
-    body = await req.json();
-  } catch {
-    return err("invalid_client_metadata", "Body must be JSON");
+    const data = JSON.parse(new TextDecoder().decode(await readBody(req, 16_384)));
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      return err("invalid_client_metadata", "Body must be a JSON object");
+    }
+    body = data;
+  } catch (error) {
+    return error instanceof BodyTooLargeError
+      ? err("invalid_client_metadata", "Body is too large", 413)
+      : err("invalid_client_metadata", "Body must be JSON");
   }
 
-  const redirectUris = Array.isArray(body.redirect_uris)
-    ? body.redirect_uris.filter((x): x is string => typeof x === "string")
-    : [];
-  if (redirectUris.length === 0) {
+  const redirectUris = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
+  if (redirectUris.length === 0 || redirectUris.length > 10) {
     return err("invalid_redirect_uri", "redirect_uris is required");
   }
   for (const u of redirectUris) {
-    if (!isAllowedRedirectUri(u)) {
-      return err("invalid_redirect_uri", `Disallowed redirect_uri: ${u}`);
+    if (typeof u !== "string" || u.length > 2048 || !isAllowedRedirectUri(u)) {
+      return err("invalid_redirect_uri", "Disallowed redirect_uri");
     }
   }
 
@@ -49,7 +56,7 @@ export async function POST(req: Request) {
       : "none";
   const clientName =
     typeof body.client_name === "string" ? body.client_name.slice(0, 200) : null;
-  const scope = typeof body.scope === "string" && body.scope ? body.scope : DEFAULT_SCOPE;
+  const scope = grantScopes(typeof body.scope === "string" ? body.scope : undefined);
 
   const clientSecret = tokenAuth === "client_secret_post" ? randomToken(32) : null;
 

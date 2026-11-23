@@ -1,4 +1,5 @@
 import "server-only";
+import { postNotification } from "./channels";
 
 export type Embed = {
   title?: string;
@@ -9,42 +10,16 @@ export type Embed = {
   timestamp?: string;
 };
 
-/** Accept any well-formed http(s) URL (Discord-host restriction relaxed). */
-function isHttpUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    return u.protocol === "https:" || u.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
-
 export async function sendDiscordEmbed(
   webhookUrl: string,
   embeds: Embed[],
   content?: string,
 ): Promise<{ ok: boolean; status: number; error?: string }> {
-  if (!isHttpUrl(webhookUrl)) {
-    return { ok: false, status: 0, error: "invalid webhook URL" };
-  }
-  try {
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: "Tally",
-        content: content ?? undefined,
-        embeds,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      return { ok: false, status: res.status, error: text.slice(0, 300) };
-    }
-    return { ok: true, status: res.status };
-  } catch (e) {
-    return { ok: false, status: 0, error: String(e) };
-  }
+  return postNotification(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: "Tally", content, embeds }),
+  });
 }
 
 export function hexToInt(hex: string): number {

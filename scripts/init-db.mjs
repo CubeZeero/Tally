@@ -9,6 +9,7 @@
 // Tally's schema evolution. Data seeding (default categories etc.) is handled
 // by the app's ensureBootstrap() on first authenticated load.
 import { PrismaClient } from "@prisma/client";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 const prisma = new PrismaClient();
@@ -112,6 +113,26 @@ try {
     }
   }
 
+  await prisma.$transaction(async (tx) => {
+    const users = await tx.user.findMany({
+      select: { id: true, apiKey: true, restWriteApiKey: true, notifyToken: true },
+    });
+    for (const { id, ...keys } of users) {
+      const updates = {};
+      for (const [field, key] of Object.entries(keys)) {
+        if (key && !/^sha256:[0-9a-f]{64}$/.test(key)) {
+          updates[field] = "sha256:" + createHash("sha256").update(key).digest("hex");
+        }
+      }
+      if (Object.keys(updates).length) await tx.user.update({ where: { id }, data: updates });
+    }
+
+    // Old grants were minted before token purposes and explicit write scope
+    // were enforced. Purge them when upgrading, keeping current grants.
+    await tx.oAuthAuthCode.deleteMany({ where: { NOT: { code: { startsWith: "v2:" } } } });
+    await tx.oAuthRefreshToken.deleteMany({ where: { NOT: { tokenHash: { startsWith: "v2:" } } } });
+  });
+
   console.log(
     `[init-db] ready (tables created: ${created}, columns added: ${altered})`,
   );
@@ -151,7 +172,7 @@ try {
             passwordHash: old.passwordHash,
             currency: old.currency ?? "JPY",
             discordWebhookUrl: old.discordWebhookUrl ?? null,
-            notifyToken: old.notifyToken ?? token.slice(0, 32),
+            notifyToken: "sha256:" + createHash("sha256").update(old.notifyToken ?? token.slice(0, 32)).digest("hex"),
             notifyDaysBefore: Number(old.notifyDaysBefore ?? 3),
             notifyEnabled: Boolean(old.notifyEnabled),
             notifyHour: Number(old.notifyHour ?? 9),

@@ -13,13 +13,12 @@ export const DEFAULT_SCOPE = "tally:read";
 
 /**
  * Granted scope for an authorization request: the client's requested scopes
- * intersected with what we support; if the client requested none, grant all
- * supported (the consent screen shows exactly what is granted).
+ * intersected with what we support. Write access must be requested explicitly.
  */
 export function grantScopes(requested: string | undefined): string {
   const req = (requested ?? "").split(/\s+/).filter(Boolean);
   const granted = req.filter((s) => (SCOPES as readonly string[]).includes(s));
-  return (granted.length ? granted : [...SCOPES]).join(" ");
+  return [...new Set([DEFAULT_SCOPE, ...granted])].join(" ");
 }
 
 const ACCESS_TTL_SEC = 60 * 60; // 1 hour
@@ -32,6 +31,14 @@ export const CODE_TTL_SEC = 10 * 60; // 10 minutes
  * canonical resource URI. Works from both a Request and next/headers().
  */
 export function originFromHeaders(h: Headers): string {
+  if (process.env.TALLY_PUBLIC_URL) {
+    const url = new URL(process.env.TALLY_PUBLIC_URL);
+    if (!["https:", "http:"].includes(url.protocol) || url.username || url.password ||
+        url.pathname !== "/" || url.search || url.hash) {
+      throw new Error("TALLY_PUBLIC_URL must be an HTTP(S) origin");
+    }
+    return url.origin;
+  }
   const first = (v: string | null) => v?.split(",")[0]?.trim() || undefined;
   let fProto: string | undefined;
   let fHost: string | undefined;
@@ -105,7 +112,7 @@ export function sha256hex(input: string): string {
 
 /** Verify a PKCE code_verifier against an S256 code_challenge. */
 export function verifyPkceS256(verifier: string, challenge: string): boolean {
-  if (!verifier || !challenge) return false;
+  if (!/^[A-Za-z0-9._~-]{43,128}$/.test(verifier) || !isPkceChallenge(challenge)) return false;
   const computed = b64url(createHash("sha256").update(verifier).digest());
   return computed === challenge;
 }
@@ -113,6 +120,11 @@ export function verifyPkceS256(verifier: string, challenge: string): boolean {
 export function randomToken(bytes = 32): string {
   return b64url(randomBytes(bytes));
 }
+
+export const isPkceChallenge = (challenge: string) => /^[A-Za-z0-9_-]{43}$/.test(challenge);
+
+export const authorizationCodeHash = (code: string) => "v2:" + sha256hex(`tally:code:v2:${code}`);
+const refreshTokenHash = (token: string) => "v2:" + sha256hex(`tally:refresh:v2:${token}`);
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
@@ -128,10 +140,11 @@ export function isAllowedRedirectUri(u: string): boolean {
   } catch {
     return false;
   }
+  if (url.username || url.password || url.hash) return false;
   if (url.protocol === "https:") return true;
   if (url.protocol === "http:") return LOOPBACK_HOSTS.has(url.hostname);
   // Private-use URI scheme for native apps (e.g. "cursor:", "com.example.app:").
-  return url.protocol.length > 1 && url.protocol.endsWith(":");
+  return /^(?:[a-z][a-z0-9-]*(?:\.[a-z0-9-]+)+|cursor|vscode|vscode-insiders):$/.test(url.protocol);
 }
 
 // ---- Access tokens (JWT) --------------------------------------------------
@@ -150,7 +163,7 @@ export async function mintAccessToken(opts: {
     .setAudience(opts.resource)
     .setIssuedAt()
     .setExpirationTime(`${ACCESS_TTL_SEC}s`)
-    .sign(oauthSigningKey());
+    .sign(await oauthSigningKey());
   return { token, expiresIn: ACCESS_TTL_SEC };
 }
 
@@ -162,10 +175,12 @@ export async function verifyAccessToken(
   expectedResource: string,
 ): Promise<AccessClaims | null> {
   try {
-    const { payload } = await jwtVerify(token, oauthSigningKey(), {
-      audience: expectedResource, // RFC 8707 audience binding
+    const { payload } = await jwtVerify(token, await oauthSigningKey(), {
+      algorithms: ["HS256"], typ: "at+jwt", issuer: new URL(expectedResource).origin,
+      audience: expectedResource, requiredClaims: ["sub", "iat", "exp"],
     });
-    if (typeof payload.sub !== "string") return null;
+    if (typeof payload.sub !== "string" ||
+      !(await prisma.user.findUnique({ where: { id: payload.sub }, select: { id: true } }))) return null;
     const scope = typeof payload.scope === "string" ? payload.scope : "";
     const clientId = typeof payload.client_id === "string" ? payload.client_id : "";
     return { userId: payload.sub, clientId, scopes: scope ? scope.split(" ") : [] };
@@ -181,11 +196,11 @@ export async function issueRefreshToken(opts: {
   clientId: string;
   scope: string;
   resource: string;
-}): Promise<string> {
+}, tx: Pick<typeof prisma, "oAuthRefreshToken"> = prisma): Promise<string> {
   const raw = randomToken(48);
-  await prisma.oAuthRefreshToken.create({
+  await tx.oAuthRefreshToken.create({
     data: {
-      tokenHash: sha256hex(raw),
+      tokenHash: refreshTokenHash(raw),
       clientId: opts.clientId,
       userId: opts.userId,
       scope: opts.scope,
@@ -203,31 +218,23 @@ export async function issueRefreshToken(opts: {
 export async function rotateRefreshToken(
   raw: string,
   clientId: string,
+  resource: string,
 ): Promise<
   | { userId: string; clientId: string; scope: string; resource: string; refreshToken: string }
   | null
 > {
-  const hash = sha256hex(raw);
-  const row = await prisma.oAuthRefreshToken.findUnique({ where: { tokenHash: hash } });
-  if (!row || row.revokedAt || row.clientId !== clientId || row.expiresAt < new Date()) {
-    return null;
-  }
-  // Revoke the presented token, then mint a fresh one (rotation).
-  await prisma.oAuthRefreshToken.update({
-    where: { tokenHash: hash },
-    data: { revokedAt: new Date() },
+  return prisma.$transaction(async (tx) => {
+    const tokenHash = refreshTokenHash(raw);
+    const row = await tx.oAuthRefreshToken.findUnique({ where: { tokenHash } });
+    if (!row) return null;
+    const now = new Date();
+    const consumed = await tx.oAuthRefreshToken.updateMany({
+      where: { tokenHash, clientId, resource, revokedAt: null, expiresAt: { gt: now } },
+      data: { revokedAt: now },
+    });
+    if (!consumed.count) return null;
+    const scope = grantScopes(row.scope);
+    const refreshToken = await issueRefreshToken({ ...row, scope }, tx);
+    return { userId: row.userId, clientId: row.clientId, scope, resource: row.resource, refreshToken };
   });
-  const refreshToken = await issueRefreshToken({
-    userId: row.userId,
-    clientId: row.clientId,
-    scope: row.scope,
-    resource: row.resource,
-  });
-  return {
-    userId: row.userId,
-    clientId: row.clientId,
-    scope: row.scope,
-    resource: row.resource,
-    refreshToken,
-  };
 }

@@ -1,13 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { hashApiToken } from "@/lib/token-hash";
 import { prisma, randomToken } from "@/lib/db";
-import { requireAuth, setUserPassword } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { getT } from "@/lib/i18n";
 import { getLang } from "@/lib/server-lang";
 import { refreshRates } from "@/lib/rates";
 import { notifyUpcoming } from "@/lib/notify";
-import { isHttpUrl, isSlackWebhook } from "@/lib/channels";
+import { isSlackWebhook } from "@/lib/channels";
+import { allowedNotificationUrl, allowedUserSmtp } from "@/lib/notification-policy";
 import { revalidateAll, type ActionState } from "./shared";
 
 export async function updateSettings(
@@ -19,9 +21,7 @@ export async function updateSettings(
   const discordWebhookUrl =
     String(formData.get("discordWebhookUrl") ?? "").trim() || null;
 
-  // Only require a well-formed http(s) URL (the strict Discord-host check is
-  // intentionally relaxed so proxies / compatible endpoints work too).
-  if (discordWebhookUrl && !isHttpUrl(discordWebhookUrl)) {
+  if (discordWebhookUrl && !allowedNotificationUrl(discordWebhookUrl)) {
     return { error: getT(await getLang())("set.err.badUrl") };
   }
   const notifyEmail = String(formData.get("notifyEmail") ?? "").trim() || null;
@@ -43,7 +43,7 @@ export async function updateSettings(
   // Additional notification channels.
   const webhookUrl = String(formData.get("webhookUrl") ?? "").trim() || null;
   const webhookEnabled = formData.get("webhookEnabled") === "true";
-  if (webhookUrl && !isHttpUrl(webhookUrl)) {
+  if (webhookUrl && !allowedNotificationUrl(webhookUrl)) {
     return { error: getT(await getLang())("set.err.badUrl") };
   }
   const slackWebhookUrl =
@@ -54,7 +54,7 @@ export async function updateSettings(
   }
   const ntfyUrl = String(formData.get("ntfyUrl") ?? "").trim() || null;
   const ntfyEnabled = formData.get("ntfyEnabled") === "true";
-  if (ntfyUrl && !isHttpUrl(ntfyUrl)) {
+  if (ntfyUrl && !allowedNotificationUrl(ntfyUrl)) {
     return { error: getT(await getLang())("set.err.badUrl") };
   }
   const ntfyTokenInput = String(formData.get("ntfyToken") ?? "");
@@ -71,6 +71,9 @@ export async function updateSettings(
     65535,
     Math.max(1, parseInt(String(formData.get("smtpPort") ?? "587"), 10) || 587),
   );
+  if (smtpHost && !allowedUserSmtp(smtpHost, smtpPort)) {
+    return { error: getT(await getLang())("set.err.smtpDestination") };
+  }
   const smtpUser = String(formData.get("smtpUser") ?? "").trim() || null;
   const smtpFrom = String(formData.get("smtpFrom") ?? "").trim() || null;
   const smtpPassInput = String(formData.get("smtpPass") ?? "");
@@ -103,14 +106,6 @@ export async function updateSettings(
       ...(ntfyTokenInput ? { ntfyToken: ntfyTokenInput } : {}),
     },
   });
-
-  const newPassword = String(formData.get("password") ?? "");
-  if (newPassword) {
-    if (newPassword.length < 8) {
-      return { error: getT(await getLang())("set.err.passwordShort") };
-    }
-    await setUserPassword(userId, newPassword);
-  }
 
   if (before && before.currency !== currency) {
     await refreshRates(userId);
@@ -157,14 +152,15 @@ export async function disableIcal(): Promise<ActionState> {
 
 // ---- API key (MCP / read API) -------------------------------------------
 
-export async function generateApiKey(): Promise<ActionState> {
+export async function generateApiKey() {
   const userId = await requireAuth();
+  const key = randomToken();
   await prisma.user.update({
     where: { id: userId },
-    data: { apiKey: randomToken() },
+    data: { apiKey: hashApiToken(key) },
   });
   revalidatePath("/settings");
-  return { ok: true };
+  return { key };
 }
 
 export async function revokeApiKey(): Promise<ActionState> {
@@ -177,12 +173,13 @@ export async function revokeApiKey(): Promise<ActionState> {
   return { ok: true };
 }
 
-export async function setRestWriteApiKey(enabled: boolean): Promise<ActionState> {
+export async function setRestWriteApiKey(enabled: boolean) {
   const userId = await requireAuth();
+  const key = enabled === true ? randomToken() : null;
   await prisma.user.update({
     where: { id: userId },
-    data: { restWriteApiKey: enabled === true ? randomToken() : null },
+    data: { restWriteApiKey: key ? hashApiToken(key) : null },
   });
   revalidatePath("/settings");
-  return { ok: true };
+  return { key };
 }

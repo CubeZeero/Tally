@@ -1,20 +1,7 @@
 import "server-only";
+import { allowedNotificationUrl } from "./notification-policy";
 
 export type SendResult = { ok: boolean; status: number; error?: string };
-
-/**
- * Accepts any well-formed http(s) URL. Self-hosted destinations on the LAN are
- * a legitimate use case here (n8n, ntfy, Gotify …), so private addresses are
- * intentionally allowed — each user configures their own destination.
- */
-export function isHttpUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    return u.protocol === "https:" || u.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
 
 const SLACK_HOSTS = new Set(["hooks.slack.com"]);
 
@@ -32,16 +19,18 @@ export function isSlackWebhook(url: string): boolean {
   }
 }
 
-async function post(url: string, init: RequestInit): Promise<SendResult> {
+export async function postNotification(url: string, init: RequestInit): Promise<SendResult> {
+  if (!allowedNotificationUrl(url)) return { ok: false, status: 0, error: "destination not allowed" };
   try {
-    const res = await fetch(url, init);
+    const res = await fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(10000) });
     if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      return { ok: false, status: res.status, error: text.slice(0, 300) };
+      await res.body?.cancel().catch(() => undefined);
+      return { ok: false, status: res.status, error: "notification request rejected" };
     }
+    await res.body?.cancel().catch(() => undefined);
     return { ok: true, status: res.status };
-  } catch (e) {
-    return { ok: false, status: 0, error: String(e) };
+  } catch {
+    return { ok: false, status: 0, error: "notification request failed" };
   }
 }
 
@@ -50,8 +39,7 @@ export async function sendGenericWebhook(
   url: string,
   payload: unknown,
 ): Promise<SendResult> {
-  if (!isHttpUrl(url)) return { ok: false, status: 0, error: "invalid URL" };
-  return post(url, {
+  return postNotification(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -76,7 +64,7 @@ export async function sendSlack(
       text: { type: "mrkdwn", text: lines.map((l) => `• ${l}`).join("\n") },
     });
   }
-  return post(url, {
+  return postNotification(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: title, blocks }),
@@ -94,7 +82,7 @@ export async function sendNtfy(
   title: string,
   message: string,
 ): Promise<SendResult> {
-  if (!isHttpUrl(topicUrl)) {
+  if (!allowedNotificationUrl(topicUrl)) {
     return { ok: false, status: 0, error: "invalid ntfy URL" };
   }
   let base: string;
@@ -114,7 +102,7 @@ export async function sendNtfy(
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  return post(base, {
+  return postNotification(base, {
     method: "POST",
     headers,
     body: JSON.stringify({ topic, title, message, tags: ["bell"] }),

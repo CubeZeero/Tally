@@ -1,5 +1,6 @@
 "use server";
 
+import { allowRequest } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
 import { getUser, prisma } from "@/lib/db";
 import {
@@ -16,6 +17,7 @@ export async function register(
 ): Promise<ActionState> {
   const lang = normalizeLang(String(formData.get("lang") ?? ""));
   const t = getT(lang);
+  if (!allowRequest("register", 15)) return { error: t("auth.err.rateLimit") };
   if (!(await registrationAllowed())) {
     return { error: t("auth.err.registrationClosed") };
   }
@@ -24,11 +26,13 @@ export async function register(
   const confirm = String(formData.get("confirm") ?? "");
 
   if (username.length < 3) return { error: t("auth.err.usernameShort") };
+  if (username.length > 100) return { error: t("auth.err.usernameLong") };
   if (password.length < 8) return { error: t("auth.err.short") };
+  if (new TextEncoder().encode(password).length > 72) return { error: t("auth.err.passwordLong") };
   if (password !== confirm) return { error: t("auth.err.mismatch") };
 
   const result = await createUser(username, password, lang);
-  if ("error" in result) return { error: t("auth.err.taken") };
+  if ("error" in result) return { error: t(result.error === "closed" ? "auth.err.registrationClosed" : "auth.err.taken") };
 
   await createSession(result.id);
   await setLangCookie(lang);
@@ -43,8 +47,13 @@ export async function login(
 
   const username = String(formData.get("username") ?? "");
   const password = String(formData.get("password") ?? "");
+  const t = getT(await getLang());
+  if (username.length > 100 || password.length > 4096) return { error: t("auth.err.wrongLogin") };
+  if (!allowRequest("login", 120) || !allowRequest(`login:${username.trim().toLowerCase()}`, 12)) {
+    return { error: t("auth.err.rateLimit") };
+  }
   const userId = await verifyLogin(username, password);
-  if (!userId) return { error: getT(await getLang())("auth.err.wrongLogin") };
+  if (!userId) return { error: t("auth.err.wrongLogin") };
 
   await createSession(userId);
   const user = await getUser(userId);
@@ -52,7 +61,7 @@ export async function login(
 
   // Return to a same-origin destination when present (e.g. the OAuth consent page).
   const next = String(formData.get("next") ?? "");
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+  redirect(next.startsWith("/") && !next.startsWith("//") && !/[\\\u0000-\u001f]/.test(next) ? next : "/");
 }
 
 export async function updateLanguage(lang: string): Promise<void> {
@@ -76,6 +85,9 @@ export async function changePassword(
   const userId = await requireAuth();
   const pw = String(formData.get("password") ?? "");
   if (!pw) return {};
+  if (new TextEncoder().encode(pw).length > 72) {
+    return { error: getT(await getLang())("auth.err.passwordLong") };
+  }
   if (pw.length < 8) {
     return { error: getT(await getLang())("set.err.passwordShort") };
   }

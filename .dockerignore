@@ -4,8 +4,15 @@ node_modules
 .gitignore
 data
 *.db
-.env
-.env.local
+.env*
+*.csv
+*.db-*
+*.sqlite*
+*.pem
+*.key
+deploy_log
+.claude
+.git*
 npm-debug.log*
 Dockerfile
 docker-compose.yml

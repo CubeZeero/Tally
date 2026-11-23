@@ -9,6 +9,9 @@ import {
   randomToken,
   grantScopes,
   CODE_TTL_SEC,
+  authorizationCodeHash,
+  isAllowedRedirectUri,
+  isPkceChallenge,
 } from "@/lib/oauth";
 
 function withParams(base: string, params: Record<string, string>): string {
@@ -19,7 +22,7 @@ function withParams(base: string, params: Record<string, string>): string {
 
 async function allowedRedirect(clientId: string, redirectUri: string): Promise<boolean> {
   const client = await prisma.oAuthClient.findUnique({ where: { id: clientId } });
-  if (!client) return false;
+  if (!client || !isAllowedRedirectUri(redirectUri)) return false;
   try {
     return (JSON.parse(client.redirectUris) as string[]).includes(redirectUri);
   } catch {
@@ -39,13 +42,13 @@ export async function approveAuthorization(formData: FormData) {
   const userId = await getSession();
   if (!userId) redirect(`/login?next=${encodeURIComponent(authorizeUrl)}`);
 
-  if (!(await allowedRedirect(clientId, redirectUri))) redirect("/");
+  if (!isPkceChallenge(codeChallenge) || !(await allowedRedirect(clientId, redirectUri))) redirect("/");
 
   const resource = `${originFromHeaders(await headers())}/api/mcp`;
   const code = randomToken(32);
   await prisma.oAuthAuthCode.create({
     data: {
-      code,
+      code: authorizationCodeHash(code),
       clientId,
       userId,
       redirectUri,

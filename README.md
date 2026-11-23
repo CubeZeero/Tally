@@ -69,7 +69,7 @@ password). Your data is stored only on your server.
 docker build -t tally .
 docker run -d \
   --name tally \
-  -p 127.0.0.1:6400:6400 \
+  -p 6400:6400 \
   -e SESSION_SECRET="$(openssl rand -base64 32)" \
   -e TZ="Asia/Tokyo" \
   -v tally-data:/data \
@@ -98,7 +98,7 @@ substitution; `.env` is git-ignored, so never commit real secrets.
 
 ### Security settings
 
-The Compose port is bound to `127.0.0.1` by default. For LAN or Tailscale access, set `TALLY_BIND_ADDRESS` to the host IP you want to expose. For OAuth behind a reverse proxy, set `TALLY_PUBLIC_URL` to the external HTTPS origin.
+Compose publishes port `6400` on all host interfaces by default. Optionally set `TALLY_BIND_ADDRESS=127.0.0.1` in `.env` for same-host access, or specify the server’s LAN or Tailscale IP to bind only to that address. For OAuth behind a reverse proxy, set `TALLY_PUBLIC_URL` to the external HTTPS origin.
 
 Custom webhook origins must be listed in `TALLY_NOTIFICATION_ORIGINS` and per-user SMTP destinations in `TALLY_SMTP_DESTINATIONS` (exact host and port). See [.env.example](.env.example) for examples.
 

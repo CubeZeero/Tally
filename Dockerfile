@@ -29,7 +29,7 @@ RUN node node_modules/prisma/build/index.js migrate diff \
 FROM node:22-slim AS runner
 WORKDIR /app
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends openssl ca-certificates tzdata \
+  && apt-get install -y --no-install-recommends openssl ca-certificates tzdata gosu \
   && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
@@ -55,9 +55,13 @@ COPY --from=builder /app/node_modules/nodemailer ./node_modules/nodemailer
 COPY --from=builder /app/scripts/init-db.mjs ./init-db.mjs
 COPY --from=builder /app/scripts/init.sql ./init.sql
 
-RUN mkdir -p /data
+COPY scripts/docker-entrypoint.sh /usr/local/bin/tally-entrypoint
+RUN chmod 755 /usr/local/bin/tally-entrypoint \
+  && mkdir -p /data /app/.next/cache \
+  && chown node:node /data /app/.next/cache
 VOLUME /data
 EXPOSE 6400
 
 # Apply the schema (idempotent) then start the standalone server.
-CMD ["sh", "-c", "node init-db.mjs && node server.js"]
+ENTRYPOINT ["/usr/local/bin/tally-entrypoint"]
+CMD ["node", "server.js"]

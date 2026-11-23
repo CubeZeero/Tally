@@ -263,6 +263,9 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "Request body exceeds the 1 MiB limit"
           }
         },
         "requestBody": {
@@ -444,6 +447,9 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "Request body exceeds the 1 MiB limit"
           }
         },
         "parameters": [
@@ -844,6 +850,9 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "Request body exceeds the 1 MiB limit"
           }
         },
         "requestBody": {
@@ -1014,6 +1023,9 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "Request body exceeds the 1 MiB limit"
           }
         },
         "requestBody": {
@@ -1546,6 +1558,9 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "Request body exceeds the 1 MiB limit"
           }
         },
         "requestBody": {
@@ -1695,6 +1710,9 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "Request body exceeds the 1 MiB limit"
           }
         },
         "parameters": [
@@ -2002,6 +2020,9 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "Request body exceeds the 1 MiB limit"
           }
         },
         "parameters": [

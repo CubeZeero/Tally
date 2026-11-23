@@ -117,6 +117,13 @@ function buildEmbed(daysBefore: number, items: Item[], extras: Extras): Embed {
   };
 }
 
+function escapeHtml(value: string): string {
+  const entities: Record<string, string> = {
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  };
+  return value.replace(/[&<>"']/g, (character) => entities[character]);
+}
+
 function buildEmailBody(daysBefore: number, items: Item[], extras: Extras) {
   const subject = items.length
     ? `Tally: ${items.length} upcoming payment(s) within ${daysBefore} day(s)`
@@ -141,21 +148,21 @@ function buildEmailBody(daysBefore: number, items: Item[], extras: Extras) {
 
   const html = `<h2 style="font-family:sans-serif">Tally</h2>${
     extras.budgetWarning
-      ? `<p style="font-family:sans-serif;color:#ff7a00"><strong>${extras.budgetWarning}</strong></p>`
+      ? `<p style="font-family:sans-serif;color:#ff7a00"><strong>${escapeHtml(extras.budgetWarning)}</strong></p>`
       : ""
   }${
     items.length
       ? `<ul style="font-family:sans-serif">${items
           .map(
             (i) =>
-              `<li><strong>${i.name}</strong>${i.trial ? " (trial ends)" : ""} — ${i.price} · ${i.dateLabel}</li>`,
+              `<li><strong>${escapeHtml(i.name)}</strong>${i.trial ? " (trial ends)" : ""} — ${escapeHtml(i.price)} · ${escapeHtml(i.dateLabel)}</li>`,
           )
           .join("")}</ul>`
       : "<p style='font-family:sans-serif'>No upcoming payments.</p>"
   }${
     extras.reviewItems.length
       ? `<p style="font-family:sans-serif"><strong>Review before renewal</strong></p><ul style="font-family:sans-serif">${extras.reviewItems
-          .map((r) => `<li>${r.name} — ${r.dateLabel}</li>`)
+          .map((r) => `<li>${escapeHtml(r.name)} — ${escapeHtml(r.dateLabel)}</li>`)
           .join("")}</ul>`
       : ""
   }`;

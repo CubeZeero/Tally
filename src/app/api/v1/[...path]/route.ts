@@ -1,4 +1,6 @@
+import { BodyTooLargeError, readBody } from "@/lib/request-body";
 import { getUserIdByApiKey } from "@/lib/auth";
+import { hashApiToken } from "@/lib/token-hash";
 import { prisma } from "@/lib/db";
 import {
   groupField, labelCreate, labelDelete, labelName, labelRename, previewInput,
@@ -39,7 +41,7 @@ async function authenticate(request: Request, write = false) {
   const key = /^Bearer (\S+)$/i.exec(request.headers.get("authorization") ?? "")?.[1];
   if (key && key.length >= 16 && key.length <= 128) {
     const writer = await prisma.user.findUnique({
-      where: { restWriteApiKey: key },
+      where: { restWriteApiKey: hashApiToken(key) },
       select: { id: true },
     });
     if (writer) return writer.id;
@@ -126,11 +128,13 @@ export async function GET(request: Request, { params }: Context) {
   return json({ error: "not_found" }, 404);
 }
 
-async function readJson(request: Request): Promise<unknown> {
+async function readJson(request: Request): Promise<{ value: unknown } | { error: Response }> {
   try {
-    return await request.json();
-  } catch {
-    return null;
+    return { value: JSON.parse(new TextDecoder().decode(await readBody(request, 1024 * 1024))) };
+  } catch (error) {
+    return error instanceof BodyTooLargeError
+      ? { error: json({ error: "body_too_large" }, 413) }
+      : { error: json({ error: "invalid_body" }, 400) };
   }
 }
 
@@ -161,14 +165,18 @@ export async function POST(request: Request, { params }: Context) {
   const userId = await authenticate(request, !preview);
   if (typeof userId !== "string") return userId;
   if (preview) {
-    const parsed = previewInput.safeParse(await readJson(request));
+    const body = await readJson(request);
+    if ("error" in body) return body.error;
+    const parsed = previewInput.safeParse(body.value);
     if (!parsed.success) return json({ error: "invalid_body" }, 400);
     const result = await previewSubscriptionImport(userId, parsed.data.format, parsed.data.content);
     return json(result, result.error ? 400 : 200);
   }
   const field = labelField(resource);
   if (field && !id) {
-    const parsed = labelCreate.safeParse(await readJson(request));
+    const body = await readJson(request);
+    if ("error" in body) return body.error;
+    const parsed = labelCreate.safeParse(body.value);
     return parsed.success
       ? labelResponse(await changeSubscriptionLabel(userId, field, { action: "create", ...parsed.data }), 201)
       : json({ error: "invalid_body" }, 400);
@@ -180,7 +188,9 @@ export async function POST(request: Request, { params }: Context) {
   }
   if (id) return notFound();
 
-  const parsed = createInput.safeParse(await readJson(request));
+  const body = await readJson(request);
+  if ("error" in body) return body.error;
+  const parsed = createInput.safeParse(body.value);
   if (!parsed.success) return json({ error: "invalid_body" }, 400);
   return created(await createSubscription(userId, {
     ...subscriptionWriteDefaults(),
@@ -196,7 +206,9 @@ export async function PATCH(request: Request, { params }: Context) {
   const field = labelField(resource);
   if (field) {
     const name = labelName.safeParse(id);
-    const body = labelRename.safeParse(await readJson(request));
+    const jsonBody = await readJson(request);
+    if ("error" in jsonBody) return jsonBody.error;
+    const body = labelRename.safeParse(jsonBody.value);
     return name.success && body.success
       ? labelResponse(await changeSubscriptionLabel(userId, field, {
         action: "rename", name: name.data, newName: body.data.name,
@@ -205,7 +217,9 @@ export async function PATCH(request: Request, { params }: Context) {
   }
   if (resource !== "subscriptions") return notFound();
 
-  const parsed = patchInput.safeParse(await readJson(request));
+  const body = await readJson(request);
+  if ("error" in body) return body.error;
+  const parsed = patchInput.safeParse(body.value);
   if (!parsed.success) return json({ error: "invalid_body" }, 400);
   const subscription = await updateSubscription(userId, id, parsed.data);
   return subscription ? json({ subscription }) : notFound();

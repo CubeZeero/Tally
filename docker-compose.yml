@@ -4,7 +4,9 @@ services:
     container_name: tally
     restart: unless-stopped
     ports:
-      - "6400:6400"
+      - "${TALLY_BIND_ADDRESS:-127.0.0.1}:6400:6400"
+    security_opt:
+      - no-new-privileges:true
     environment:
       # Set a strong SESSION_SECRET in a .env file next to this file (git-ignored):
       #   SESSION_SECRET=$(openssl rand -base64 32)
@@ -14,8 +16,11 @@ services:
       DATABASE_URL: "file:/data/tally.db"
       # Notification send time follows this timezone.
       TZ: "${TZ:-Asia/Tokyo}"
-      # Set to 1 to block new sign-ups after the first account is created.
-      DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-}"
+      # Set to 0 only if new user sign-ups are wanted.
+      DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-1}"
+      TALLY_PUBLIC_URL: "${TALLY_PUBLIC_URL:-}"
+      TALLY_NOTIFICATION_ORIGINS: "${TALLY_NOTIFICATION_ORIGINS:-}"
+      TALLY_SMTP_DESTINATIONS: "${TALLY_SMTP_DESTINATIONS:-}"
       # Email (SMTP) is configured per-user in Settings → Notifications.
       # If you prefer a server-wide fallback, add SMTP_HOST/PORT/USER/PASS/FROM here.
     volumes:

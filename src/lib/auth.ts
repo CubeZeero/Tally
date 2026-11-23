@@ -2,6 +2,7 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
+import { hashApiToken } from "@/lib/token-hash";
 import bcrypt from "bcryptjs";
 import { prisma, seedUserDefaults } from "./db";
 
@@ -42,12 +43,18 @@ export function normalizeUsername(v: string): string {
 }
 
 /**
- * HMAC key for signing OAuth access tokens (MCP). Reuses SESSION_SECRET so
- * tokens survive restarts when a stable secret is set; otherwise ephemeral
- * (same behavior/caveat as session cookies).
+ * Derive separate signing keys for browser sessions and MCP access tokens.
  */
-export function oauthSigningKey(): Uint8Array {
-  return secret();
+async function signingKey(purpose: string): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey("raw", new Uint8Array(secret()),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return new Uint8Array(await crypto.subtle.sign(
+    "HMAC", key, new TextEncoder().encode(`tally:v2:${purpose}`),
+  ));
+}
+
+export function oauthSigningKey() {
+  return signingKey("mcp-access");
 }
 
 /** True when at least one account exists. */
@@ -55,54 +62,46 @@ export async function anyUsers(): Promise<boolean> {
   return (await prisma.user.count()) > 0;
 }
 
-/**
- * Whether new sign-ups are allowed. The first account is always allowed so a
- * fresh instance can be set up; set DISABLE_REGISTRATION=1 to lock it after.
- */
+function openRegistration() {
+  return ["0", "false", "no"].includes((process.env.DISABLE_REGISTRATION ?? "1").trim().toLowerCase());
+}
+
+/** The first account remains available for setup. */
 export async function registrationAllowed(): Promise<boolean> {
-  const disabled = ["1", "true", "yes"].includes(
-    (process.env.DISABLE_REGISTRATION ?? "").toLowerCase(),
-  );
-  if (!disabled) return true;
-  return !(await anyUsers()); // still allow creating the very first account
+  return openRegistration() || !(await anyUsers());
 }
 
 export async function createUser(
   username: string,
   password: string,
   lang = "en",
-): Promise<{ id: string } | { error: "taken" }> {
+): Promise<{ id: string } | { error: "taken" | "closed" }> {
   const name = normalizeUsername(username);
-  const existing = await prisma.user.findUnique({ where: { username: name } });
-  if (existing) return { error: "taken" };
-
-  const isFirst = (await prisma.user.count()) === 0;
   const passwordHash = await bcrypt.hash(password, 10);
-  // Pick a sensible default main currency from the sign-up language.
   const currency = lang === "en" ? "USD" : "JPY";
-  const user = await prisma.user.create({
-    // username is normalized for lookups; displayName keeps the original case.
-    data: { username: name, displayName: username.trim(), passwordHash, lang, currency },
+
+  const result = await prisma.$transaction(async (tx) => {
+    const isFirst = (await tx.user.count()) === 0;
+    if (!isFirst && !openRegistration()) return { error: "closed" } as const;
+    if (await tx.user.findUnique({ where: { username: name }, select: { id: true } })) {
+      return { error: "taken" } as const;
+    }
+    const user = await tx.user.create({
+      data: { username: name, displayName: username.trim(), passwordHash, lang, currency },
+      select: { id: true },
+    });
+
+    if (isFirst) {
+      const where = { userId: null };
+      const data = { userId: user.id };
+      await tx.subscription.updateMany({ where, data });
+      await tx.category.updateMany({ where, data });
+      await tx.paymentMethod.updateMany({ where, data });
+    }
+    return user;
   });
-
-  // The very first account claims any pre-multi-user (orphaned) data.
-  if (isFirst) {
-    await prisma.subscription.updateMany({
-      where: { userId: null },
-      data: { userId: user.id },
-    });
-    await prisma.category.updateMany({
-      where: { userId: null },
-      data: { userId: user.id },
-    });
-    await prisma.paymentMethod.updateMany({
-      where: { userId: null },
-      data: { userId: user.id },
-    });
-  }
-
-  await seedUserDefaults(user.id, lang);
-  return { id: user.id };
+  if ("id" in result) await seedUserDefaults(result.id, lang);
+  return result;
 }
 
 /** Persist the UI language cookie (used to render server components). */
@@ -134,16 +133,17 @@ export async function setUserPassword(userId: string, password: string) {
 
 export async function createSession(userId: string) {
   const token = await new SignJWT({ sub: userId })
-    .setProtectedHeader({ alg: "HS256" })
+    .setProtectedHeader({ alg: "HS256", typ: "tally-session+jwt" })
+    .setIssuer("tally").setAudience("tally-web")
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE}s`)
-    .sign(secret());
+    .sign(await signingKey("web-session"));
 
   // Only mark Secure when the request actually came over HTTPS, so plain-HTTP
   // self-hosting (e.g. a Tailscale IP) does not drop the cookie.
   const h = await headers();
   const proto = h.get("x-forwarded-proto")?.split(",")[0].trim();
-  const secure = proto === "https";
+  const secure = process.env.TALLY_PUBLIC_URL?.startsWith("https://") || proto === "https";
 
   const store = await cookies();
   store.set(COOKIE, token, {
@@ -166,7 +166,10 @@ export async function getSession(): Promise<string | null> {
   const token = store.get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret());
+    const { payload } = await jwtVerify(token, await signingKey("web-session"), {
+      algorithms: ["HS256"], typ: "tally-session+jwt", issuer: "tally",
+      audience: "tally-web", requiredClaims: ["sub", "iat", "exp"],
+    });
     const userId = typeof payload.sub === "string" ? payload.sub : null;
     if (!userId) return null;
     // Ensure the user still exists.
@@ -183,16 +186,15 @@ export async function getSession(): Promise<string | null> {
 /**
  * Resolve a bearer API key to a userId. Cookie-independent, so it works outside
  * a Next request context (e.g. the MCP endpoint). Returns null for a missing,
- * blank, too-short, or unknown key. Keys are stored plaintext, like the iCal /
- * notify tokens.
+ * blank, too-short, or unknown key. Only its hash is stored.
  */
 export async function getUserIdByApiKey(
   key: string | null | undefined,
 ): Promise<string | null> {
   const token = (key ?? "").trim();
-  if (token.length < 16) return null; // reject blanks / obviously invalid keys
+  if (token.length < 16 || token.length > 128) return null; // reject blanks / obviously invalid keys
   const user = await prisma.user.findUnique({
-    where: { apiKey: token },
+    where: { apiKey: hashApiToken(token) },
     select: { id: true },
   });
   return user?.id ?? null;

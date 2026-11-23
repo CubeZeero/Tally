@@ -69,7 +69,7 @@ password). Your data is stored only on your server.
 docker build -t tally .
 docker run -d \
   --name tally \
-  -p 6400:6400 \
+  -p 127.0.0.1:6400:6400 \
   -e SESSION_SECRET="$(openssl rand -base64 32)" \
   -e TZ="Asia/Tokyo" \
   -v tally-data:/data \
@@ -87,7 +87,7 @@ substitution; `.env` is git-ignored, so never commit real secrets.
 | `DATABASE_URL` | SQLite file location | `file:/data/tally.db` (Docker) |
 | `TALLY_DATA_DIR` | Host directory for the data (DB + backups). Point at external storage to keep data off the server's internal disk; unset uses a Docker-managed named volume | (named volume `tally-data`) |
 | `TZ` | Timezone for the notification scheduler | `Asia/Tokyo` |
-| `DISABLE_REGISTRATION` | Set to `1` to block new sign-ups after the first account | (unset) |
+| `DISABLE_REGISTRATION` | Set to `0` to allow new sign-ups after the first account | `1` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | SMTP for email notifications (fallback; per-user SMTP in Settings takes priority) | (unset) |
 | `BACKUP_ENABLED` | Enable automatic backups | `true` |
 | `BACKUP_INTERVAL_HOURS` | Backup interval in hours | `24` |
@@ -95,6 +95,14 @@ substitution; `.env` is git-ignored, so never commit real secrets.
 | `BACKUP_DIR` | Backup destination | `backups/` in the data volume |
 | `UPDATE_CHECK` | Show an "update available" banner by comparing against the latest GitHub tag. Set to `0` to disable (stops the periodic api.github.com request) | `1` (on) |
 | `PORT` | Listening port | `6400` |
+
+### Security settings
+
+The Compose port is bound to `127.0.0.1` by default. For LAN or Tailscale access, set `TALLY_BIND_ADDRESS` to the host IP you want to expose. For OAuth behind a reverse proxy, set `TALLY_PUBLIC_URL` to the external HTTPS origin.
+
+Custom webhook origins must be listed in `TALLY_NOTIFICATION_ORIGINS` and per-user SMTP destinations in `TALLY_SMTP_DESTINATIONS` (exact host and port). See [.env.example](.env.example) for examples.
+
+API keys are shown once. Existing keys still work in the Bearer header after a Docker upgrade. Switch MCP URLs containing keys to the plain `/api/mcp` endpoint with a Bearer header or OAuth. Sign in and authorize OAuth clients again after upgrading.
 
 ## Notifications
 

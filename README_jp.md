@@ -69,7 +69,7 @@ docker compose up -d --build
 docker build -t tally .
 docker run -d \
   --name tally \
-  -p 6400:6400 \
+  -p 127.0.0.1:6400:6400 \
   -e SESSION_SECRET="$(openssl rand -base64 32)" \
   -e TZ="Asia/Tokyo" \
   -v tally-data:/data \
@@ -87,7 +87,7 @@ docker run -d \
 | `DATABASE_URL` | SQLite ファイルの場所 | `file:/data/tally.db`（Docker） |
 | `TALLY_DATA_DIR` | データ（DB＋バックアップ）を置くホストのディレクトリ。外部ストレージを指定するとサーバ内蔵ディスクに残らない。未設定なら Docker 管理の名前付きボリューム | （名前付きボリューム `tally-data`） |
 | `TZ` | 通知スケジューラーのタイムゾーン | `Asia/Tokyo` |
-| `DISABLE_REGISTRATION` | `1` で最初のアカウント作成後の新規登録を無効化 | （未設定） |
+| `DISABLE_REGISTRATION` | `0` で最初のアカウント作成後も新規登録を許可 | `1` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | メール通知用の SMTP 設定（フォールバック。ユーザーごとの設定が優先） | （未設定） |
 | `BACKUP_ENABLED` | 自動バックアップの有効／無効 | `true` |
 | `BACKUP_INTERVAL_HOURS` | 自動バックアップの間隔（時間） | `24` |
@@ -95,6 +95,14 @@ docker run -d \
 | `BACKUP_DIR` | バックアップの保存先 | データボリューム内の `backups/` |
 | `UPDATE_CHECK` | 最新の GitHub タグと比較して「新バージョンあり」バナーを表示。`0` で無効化（定期的な api.github.com へのアクセスを停止） | `1`（有効） |
 | `PORT` | 待ち受けポート | `6400` |
+
+### セキュリティ設定
+
+Compose は既定で `127.0.0.1` にバインドします。LAN や Tailscale から接続する場合は、`TALLY_BIND_ADDRESS` で公開するホスト IP を指定します。リバースプロキシ経由で OAuth を使う場合は、外部向け HTTPS オリジンを `TALLY_PUBLIC_URL` に設定してください。
+
+カスタム Webhook は `TALLY_NOTIFICATION_ORIGINS`、ユーザー別 SMTP は `TALLY_SMTP_DESTINATIONS` で接続先を許可します。指定例は [.env.example](.env.example) にあります。
+
+API キーの表示は発行時の一度だけです。Docker で更新すると既存キーも Bearer ヘッダーで引き続き使えます。キー付き MCP URL からは、通常の `/api/mcp` に Bearer ヘッダーまたは OAuth で接続する設定へ切り替えてください。更新後は再ログインと OAuth の再認可が必要です。
 
 ## 通知
 

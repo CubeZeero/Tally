@@ -1,3 +1,5 @@
+import { readBody, BodyTooLargeError } from "@/lib/request-body";
+import { allowRequest } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 import {
   OAUTH_CORS,
@@ -7,6 +9,8 @@ import {
   issueRefreshToken,
   rotateRefreshToken,
   sha256hex,
+  authorizationCodeHash,
+  mcpResource,
 } from "@/lib/oauth";
 
 // OAuth 2.1 token endpoint: authorization_code (with PKCE) + refresh_token.
@@ -30,27 +34,29 @@ export function OPTIONS() {
 
 async function parseBody(req: Request): Promise<Record<string, string>> {
   const ct = req.headers.get("content-type") ?? "";
-  const out: Record<string, string> = {};
+  const out: Record<string, string> = Object.create(null);
+  const bytes = await readBody(req, 16_384);
+  const text = new TextDecoder().decode(bytes);
   if (ct.includes("application/json")) {
-    try {
-      const j = (await req.json()) as Record<string, unknown>;
-      for (const k of Object.keys(j)) out[k] = String(j[k]);
-    } catch {
-      /* empty */
-    }
-    return out;
-  }
-  try {
-    const fd = await req.formData();
-    for (const [k, v] of fd.entries()) out[k] = String(v);
-  } catch {
-    /* empty */
+    const value = JSON.parse(text);
+    if (!value || typeof value !== "object" || Array.isArray(value)) return out;
+    for (const [key, item] of Object.entries(value)) if (typeof item === "string") out[key] = item;
+  } else if (ct.includes("application/x-www-form-urlencoded")) {
+    for (const [key, item] of new URLSearchParams(text)) out[key] = item;
   }
   return out;
 }
 
 export async function POST(req: Request) {
-  const p = await parseBody(req);
+  if (!allowRequest("oauth-token", 180)) return err("temporarily_unavailable", "Too many requests", 429);
+  let p: Record<string, string>;
+  try {
+    p = await parseBody(req);
+  } catch (error) {
+    return error instanceof BodyTooLargeError
+      ? err("invalid_request", "Body is too large", 413)
+      : err("invalid_request", "Invalid request body");
+  }
   const grantType = p.grant_type;
   const clientId = p.client_id ?? "";
 
@@ -68,7 +74,7 @@ export async function POST(req: Request) {
   const origin = publicOrigin(req);
 
   if (grantType === "authorization_code") {
-    const row = await prisma.oAuthAuthCode.findUnique({ where: { code: p.code ?? "" } });
+    const row = await prisma.oAuthAuthCode.findUnique({ where: { code: authorizationCodeHash(p.code ?? "") } });
     if (!row || row.usedAt || row.expiresAt < new Date()) {
       return err("invalid_grant", "Invalid or expired authorization code");
     }
@@ -79,8 +85,16 @@ export async function POST(req: Request) {
     if (!verifyPkceS256(p.code_verifier ?? "", row.codeChallenge)) {
       return err("invalid_grant", "PKCE verification failed");
     }
-    // Single-use: burn the code before issuing tokens.
-    await prisma.oAuthAuthCode.update({ where: { code: row.code }, data: { usedAt: new Date() } });
+    if (row.resource !== mcpResource(req)) return err("invalid_grant", "Resource mismatch");
+    const refreshToken = await prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const consumed = await tx.oAuthAuthCode.updateMany({
+        where: { code: row.code, usedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
+      });
+      return consumed.count ? issueRefreshToken(row, tx) : null;
+    });
+    if (!refreshToken) return err("invalid_grant", "Invalid or expired authorization code");
 
     const { token, expiresIn } = await mintAccessToken({
       userId: row.userId,
@@ -88,12 +102,6 @@ export async function POST(req: Request) {
       scope: row.scope,
       resource: row.resource,
       iss: origin,
-    });
-    const refreshToken = await issueRefreshToken({
-      userId: row.userId,
-      clientId,
-      scope: row.scope,
-      resource: row.resource,
     });
     return ok({
       access_token: token,
@@ -105,7 +113,7 @@ export async function POST(req: Request) {
   }
 
   if (grantType === "refresh_token") {
-    const rotated = await rotateRefreshToken(p.refresh_token ?? "", clientId);
+    const rotated = await rotateRefreshToken(p.refresh_token ?? "", clientId, mcpResource(req));
     if (!rotated) return err("invalid_grant", "Invalid or expired refresh token");
     const { token, expiresIn } = await mintAccessToken({
       userId: rotated.userId,

@@ -1,4 +1,5 @@
 import "server-only";
+import { allowedUserSmtp } from "./notification-policy";
 import type NodemailerType from "nodemailer";
 
 // Load nodemailer via a runtime require hidden from the bundler, so its Node-only
@@ -31,7 +32,9 @@ type UserSmtp = {
 /** Resolve effective SMTP config: per-user settings, falling back to env. */
 export function resolveSmtp(user: UserSmtp): SmtpConfig {
   return {
-    host: user.smtpHost || process.env.SMTP_HOST || null,
+    host: user.smtpHost
+      ? (allowedUserSmtp(user.smtpHost, user.smtpPort || 587) ? user.smtpHost : null)
+      : process.env.SMTP_HOST || null,
     port: user.smtpHost
       ? user.smtpPort || 587
       : parseInt(process.env.SMTP_PORT ?? "587", 10),
@@ -59,6 +62,10 @@ export async function sendMail(
     host: cfg.host,
     port: cfg.port,
     secure: cfg.port === 465,
+    requireTLS: cfg.port !== 465,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     auth: cfg.user ? { user: cfg.user, pass: cfg.pass ?? undefined } : undefined,
   });
   const from = cfg.from || cfg.user || "tally@localhost";

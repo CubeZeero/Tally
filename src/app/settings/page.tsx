@@ -48,7 +48,7 @@ export default async function SettingsPage() {
   const icalUrl = user.icalToken
     ? `${proto}://${host}/api/calendar/${user.icalToken}`
     : null;
-  const mcpUrl = `${proto}://${host}/api/mcp`;
+  const mcpUrl = `${process.env.TALLY_PUBLIC_URL?.replace(/\/$/, "") || `${proto}://${host}`}/api/mcp`;
 
   const latest = backupList[0]
     ? new Date(backupList[0].mtime).toLocaleString(
@@ -122,7 +122,7 @@ export default async function SettingsPage() {
             <section className="card p-6">
               <DataManager />
             </section>
-            <McpKeyManager apiKey={user.apiKey} mcpUrl={mcpUrl} restWriteKey={user.restWriteApiKey} />
+            <McpKeyManager hasApiKey={Boolean(user.apiKey)} mcpUrl={mcpUrl} hasRestWriteKey={Boolean(user.restWriteApiKey)} />
           </div>
         </div>
       </div>

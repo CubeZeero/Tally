@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { originFromHeaders, grantScopes } from "@/lib/oauth";
+import { originFromHeaders, grantScopes, isAllowedRedirectUri, isPkceChallenge } from "@/lib/oauth";
 import { serverT } from "@/lib/server-lang";
 import { approveAuthorization, denyAuthorization } from "./actions";
 
@@ -47,7 +47,7 @@ export default async function AuthorizePage({
     ? await prisma.oAuthClient.findUnique({ where: { id: clientId } })
     : null;
   const registered = client ? safeParse(client.redirectUris) : [];
-  const redirectOk = !!redirectUri && registered.includes(redirectUri);
+  const redirectOk = isAllowedRedirectUri(redirectUri) && registered.includes(redirectUri);
 
   if (!client || !redirectOk) {
     return (
@@ -64,7 +64,7 @@ export default async function AuthorizePage({
   if (responseType !== "code") {
     redirect(withParams(redirectUri, state ? { error: "unsupported_response_type", state } : { error: "unsupported_response_type" }));
   }
-  if (!codeChallenge || codeChallengeMethod !== "S256") {
+  if (!isPkceChallenge(codeChallenge) || codeChallengeMethod !== "S256") {
     redirect(withParams(redirectUri, state ? { error: "invalid_request", state } : { error: "invalid_request" }));
   }
 

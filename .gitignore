@@ -19,7 +19,8 @@ scripts/init.sql
 
 # env
 .env
-.env.local
+.env.*
+!.env.example
 
 # misc
 .DS_Store

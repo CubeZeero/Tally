@@ -1,7 +1,7 @@
 import "server-only";
 import {
   type Cycle,
-  effectiveNextBill,
+  nextSubscriptionBill,
   formatMoney,
   isInTrial,
 } from "./money";
@@ -79,13 +79,7 @@ export function buildIcs(
 
   for (const s of subs) {
     if (!s.active) continue;
-    const anchor = s.trialEndDate ?? s.nextBillDate;
-    const next = effectiveNextBill(
-      s.startDate,
-      anchor,
-      s.cycle as Cycle,
-      s.cycleCount,
-    );
+    const next = nextSubscriptionBill(s);
     const price = formatMoney(s.cost, s.currency || opts.mainCurrency);
     const trial = isInTrial(s.trialEndDate);
     const summary = `${s.name} — ${price}${trial ? " (trial)" : ""}`;

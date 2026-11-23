@@ -1,0 +1,134 @@
+@baseUrl = http://localhost:6400
+@apiKey = REPLACE_WITH_TALLY_API_KEY
+@writeKey = REPLACE_WITH_TALLY_REST_WRITE_KEY
+@subscriptionId = REPLACE_WITH_SUBSCRIPTION_ID
+
+### List subscriptions
+GET {{baseUrl}}/api/v1/subscriptions
+Authorization: Bearer {{apiKey}}
+Accept: application/json
+
+### List active subscriptions
+GET {{baseUrl}}/api/v1/subscriptions?activeOnly=true
+Authorization: Bearer {{apiKey}}
+Accept: application/json
+
+### Get a subscription by ID (use an ID from the list)
+GET {{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}
+Authorization: Bearer {{apiKey}}
+Accept: application/json
+
+### Get totals
+GET {{baseUrl}}/api/v1/totals
+Authorization: Bearer {{apiKey}}
+Accept: application/json
+
+### Get upcoming payments
+GET {{baseUrl}}/api/v1/upcoming-payments?days=30
+Authorization: Bearer {{apiKey}}
+Accept: application/json
+
+### List categories
+GET {{baseUrl}}/api/v1/categories
+Authorization: Bearer {{apiKey}}
+Accept: application/json
+
+### List payment methods
+GET {{baseUrl}}/api/v1/payment-methods
+Authorization: Bearer {{apiKey}}
+Accept: application/json
+
+### Check authentication (expected status: 401)
+GET {{baseUrl}}/api/v1/subscriptions
+Accept: application/json
+
+### Create a subscription with a REST write key
+POST {{baseUrl}}/api/v1/subscriptions
+Authorization: Bearer {{writeKey}}
+Content-Type: application/json
+
+{
+  "name": "Demo Video",
+  "cost": 1200,
+  "currency": "JPY",
+  "cycle": "month"
+}
+
+### Update, pause, or resume a subscription with a REST write key
+PATCH {{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}
+Authorization: Bearer {{writeKey}}
+Content-Type: application/json
+
+{
+  "active": false
+}
+
+### Duplicate a subscription with a REST write key
+POST {{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}/duplicate
+Authorization: Bearer {{writeKey}}
+
+### Permanently delete a subscription with a REST write key
+DELETE {{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}
+Authorization: Bearer {{writeKey}}
+
+### Search and sort in main currency (monthly normalized cost)
+GET {{baseUrl}}/api/v1/subscriptions?q=demo&status=active&minMonthlyCost=500&sort=monthly_cost_desc
+Authorization: Bearer {{apiKey}}
+
+### Get every scheduled charge in an inclusive date range
+GET {{baseUrl}}/api/v1/payment-schedule?start=2026-12-01&end=2026-12-31
+Authorization: Bearer {{apiKey}}
+
+### List free trial end dates within 14 days
+GET {{baseUrl}}/api/v1/reminders?days=14&kind=trial
+Authorization: Bearer {{apiKey}}
+
+### Get spending grouped by payment method
+GET {{baseUrl}}/api/v1/spend-breakdown?groupBy=paymentMethod
+Authorization: Bearer {{apiKey}}
+
+### Preview CSV import (no subscriptions are written)
+POST {{baseUrl}}/api/v1/subscriptions/import-preview
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+  "format": "csv",
+  "content": "name,cost,currency\nDemo Music,980,JPY"
+}
+
+### Create a category
+POST {{baseUrl}}/api/v1/categories
+Authorization: Bearer {{writeKey}}
+Content-Type: application/json
+
+{ "name": "Video" }
+
+### Rename a category and update its subscriptions
+PATCH {{baseUrl}}/api/v1/categories/Video
+Authorization: Bearer {{writeKey}}
+Content-Type: application/json
+
+{ "name": "Streaming" }
+
+### Delete a category and move its subscriptions to an existing category
+DELETE {{baseUrl}}/api/v1/categories/Streaming?replacement=Entertainment
+Authorization: Bearer {{writeKey}}
+
+### Create a payment method
+POST {{baseUrl}}/api/v1/payment-methods
+Authorization: Bearer {{writeKey}}
+Content-Type: application/json
+
+{ "name": "WorkCard" }
+
+### Rename a payment method and update its subscriptions
+PATCH {{baseUrl}}/api/v1/payment-methods/WorkCard
+Authorization: Bearer {{writeKey}}
+Content-Type: application/json
+
+{ "name": "BusinessCard" }
+
+### Delete a payment method and move its subscriptions to an existing method
+DELETE {{baseUrl}}/api/v1/payment-methods/BusinessCard?replacement=Visa
+Authorization: Bearer {{writeKey}}

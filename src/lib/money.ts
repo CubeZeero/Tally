@@ -71,18 +71,26 @@ export function nextBillDate(
   return d;
 }
 
-/**
- * Effective upcoming bill date: rolls forward from the explicit override when
- * provided, otherwise from startDate. Always returns a date on/after `from`.
- */
-export function effectiveNextBill(
-  startDate: Date,
-  override: Date | null | undefined,
-  cycle: Cycle,
-  count: number,
-  from: Date = new Date(),
-): Date {
-  return nextBillDate(override ?? startDate, cycle, count, from);
+type SubscriptionBilling = {
+  startDate: Date | string;
+  nextBillDate: Date | string | null;
+  trialEndDate: Date | string | null;
+  cycle: string;
+  cycleCount: number;
+};
+
+export function subscriptionBillingAnchor(subscription: SubscriptionBilling): Date {
+  const { trialEndDate, nextBillDate, startDate } = subscription;
+  return new Date(trialEndDate ?? nextBillDate ?? startDate);
+}
+
+export function nextSubscriptionBill(subscription: SubscriptionBilling, from?: Date): Date {
+  return nextBillDate(
+    subscriptionBillingAnchor(subscription),
+    subscription.cycle as Cycle,
+    subscription.cycleCount,
+    from,
+  );
 }
 
 function subPeriod(date: Date, cycle: Cycle, count: number): Date {

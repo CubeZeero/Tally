@@ -41,6 +41,15 @@ export function normalizeUsername(v: string): string {
   return v.trim().toLowerCase();
 }
 
+/**
+ * HMAC key for signing OAuth access tokens (MCP). Reuses SESSION_SECRET so
+ * tokens survive restarts when a stable secret is set; otherwise ephemeral
+ * (same behavior/caveat as session cookies).
+ */
+export function oauthSigningKey(): Uint8Array {
+  return secret();
+}
+
 /** True when at least one account exists. */
 export async function anyUsers(): Promise<boolean> {
   return (await prisma.user.count()) > 0;
@@ -169,6 +178,24 @@ export async function getSession(): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Resolve a bearer API key to a userId. Cookie-independent, so it works outside
+ * a Next request context (e.g. the MCP endpoint). Returns null for a missing,
+ * blank, too-short, or unknown key. Keys are stored plaintext, like the iCal /
+ * notify tokens.
+ */
+export async function getUserIdByApiKey(
+  key: string | null | undefined,
+): Promise<string | null> {
+  const token = (key ?? "").trim();
+  if (token.length < 16) return null; // reject blanks / obviously invalid keys
+  const user = await prisma.user.findUnique({
+    where: { apiKey: token },
+    select: { id: true },
+  });
+  return user?.id ?? null;
 }
 
 /** Use inside protected server components / actions. Returns the userId. */

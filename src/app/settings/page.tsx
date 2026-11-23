@@ -5,6 +5,7 @@ import { Shell } from "@/components/Shell";
 import { SettingsForm } from "@/components/SettingsForm";
 import { ListManager } from "@/components/ListManager";
 import { DataManager } from "@/components/DataManager";
+import { McpKeyManager } from "@/components/McpKeyManager";
 import { serverT } from "@/lib/server-lang";
 import { ACCENT_KEYS, DEFAULT_ACCENT } from "@/lib/accents";
 import {
@@ -47,6 +48,7 @@ export default async function SettingsPage() {
   const icalUrl = user.icalToken
     ? `${proto}://${host}/api/calendar/${user.icalToken}`
     : null;
+  const mcpUrl = `${proto}://${host}/api/mcp`;
 
   const latest = backupList[0]
     ? new Date(backupList[0].mtime).toLocaleString(
@@ -120,6 +122,7 @@ export default async function SettingsPage() {
             <section className="card p-6">
               <DataManager />
             </section>
+            <McpKeyManager apiKey={user.apiKey} mcpUrl={mcpUrl} restWriteKey={user.restWriteApiKey} />
           </div>
         </div>
       </div>

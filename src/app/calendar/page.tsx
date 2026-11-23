@@ -8,6 +8,7 @@ import {
   convert,
   formatMoney,
   occurrencesInRange,
+  subscriptionBillingAnchor,
 } from "@/lib/money";
 import { ensureRates, parseRates } from "@/lib/rates";
 import { serverT } from "@/lib/server-lang";
@@ -53,7 +54,7 @@ export default async function CalendarPage({
   const eventsByDay: Record<string, CalEvent[]> = {};
   let monthTotal = 0;
   for (const s of subs) {
-    const anchor = s.trialEndDate ?? s.nextBillDate ?? s.startDate;
+    const anchor = subscriptionBillingAnchor(s);
     const occ = occurrencesInRange(
       anchor,
       s.cycle as Cycle,

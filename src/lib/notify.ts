@@ -3,7 +3,7 @@ import { getUser, prisma } from "./db";
 import {
   type Cycle,
   daysUntil,
-  effectiveNextBill,
+  nextSubscriptionBill,
   formatMoney,
   isInTrial,
   monthlyCost,
@@ -44,12 +44,7 @@ async function upcomingItems(
 
   const withNext = subs.map((s) => ({
     s,
-    next: effectiveNextBill(
-      s.startDate,
-      s.trialEndDate ?? s.nextBillDate,
-      s.cycle as Cycle,
-      s.cycleCount,
-    ),
+    next: nextSubscriptionBill(s),
   }));
 
   const due = withNext

@@ -7,7 +7,7 @@ import { SubIcon } from "@/components/SubIcon";
 import {
   type Cycle,
   daysUntil,
-  effectiveNextBill,
+  nextSubscriptionBill,
   formatMoney,
   isInTrial,
   monthlyCost,
@@ -57,12 +57,7 @@ export default async function DashboardPage() {
   const upcoming = active
     .map((s) => ({
       ...s,
-      next: effectiveNextBill(
-        s.startDate,
-        s.trialEndDate ?? s.nextBillDate,
-        s.cycle as Cycle,
-        s.cycleCount,
-      ),
+      next: nextSubscriptionBill(s),
     }))
     .sort((a, b) => a.next.getTime() - b.next.getTime())
     .slice(0, 5);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   BellRinging,
   CalendarBlank,
@@ -12,7 +12,6 @@ import {
   WebhooksLogo,
 } from "@phosphor-icons/react/dist/ssr";
 import {
-  updateSettings,
   refreshRatesAction,
   testDiscord,
   changePassword,
@@ -27,6 +26,7 @@ import { LangSwitcher } from "./LangSwitcher";
 import { CookieSwitch } from "./CookieSwitch";
 import { AccentPicker } from "./AccentPicker";
 import { Switch } from "./Switch";
+import { useSettingsAutosave } from "./useSettingsAutosave";
 
 export function SettingsForm({
   username,
@@ -93,56 +93,8 @@ export function SettingsForm({
 }) {
   const { t, lang } = useLang();
   const [notifyOpen, setNotifyOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  // Auto-save: settings persist as soon as you change them (no Save button).
-  // The password field is handled by its own button and never auto-saved.
-  const [saveState, setSaveState] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function currentFormData(): FormData {
-    const fd = new FormData(formRef.current!);
-    fd.delete("password"); // changed via its own action, never auto-saved
-    return fd;
-  }
-
-  async function doSave() {
-    if (!formRef.current) return;
-    setSaveState("saving");
-    const res = await updateSettings(undefined, currentFormData());
-    if (res?.error) {
-      setSaveState("error");
-      setSaveError(res.error);
-    } else {
-      setSaveState("saved");
-      setSaveError(null);
-    }
-  }
-
-  function scheduleSave(immediate: boolean) {
-    if (timer.current) clearTimeout(timer.current);
-    if (immediate) void doSave();
-    else timer.current = setTimeout(() => void doSave(), 700);
-  }
-
-  function onFormChange(e: React.FormEvent<HTMLFormElement>) {
-    const el = e.target as HTMLInputElement;
-    if (el.name === "password") return; // its own button saves it
-    const immediate =
-      el.tagName === "SELECT" || el.type === "checkbox" || el.type === "radio";
-    scheduleSave(immediate);
-  }
-
-  function onFormBlur() {
-    // Flush a pending debounced save when focus leaves an edited field.
-    if (timer.current) {
-      clearTimeout(timer.current);
-      void doSave();
-    }
-  }
+  const { formRef, status, save, onFormChange, onFormBlur } =
+    useSettingsAutosave(t("set.autoSaveFailed"));
 
   // Password change — explicit, separate from auto-save.
   const [pwPending, startPw] = useTransition();
@@ -169,9 +121,8 @@ export function SettingsForm({
 
   // "Test send" flushes any pending save first, so the just-typed value is used.
   async function saveAndTest(): Promise<ActionState> {
-    if (timer.current) clearTimeout(timer.current);
-    await doSave();
-    return testDiscord();
+    const result = await save();
+    return result?.error ? result : testDiscord();
   }
 
   // A slightly inset panel used for the Discord / email channel groups.
@@ -568,14 +519,14 @@ export function SettingsForm({
 
         {/* Auto-save status (no Save button — changes persist automatically) */}
         <div className="flex items-center gap-2 flex-wrap text-sm min-h-[1.25rem] text-[color:var(--color-ink-soft)]">
-          {saveState === "saving" && <span>{t("common.saving")}</span>}
-          {saveState === "saved" && <span>{t("set.autoSaved")}</span>}
-          {saveState === "error" && (
+          {status.state === "saving" && <span>{t("common.saving")}</span>}
+          {status.state === "saved" && <span>{t("set.autoSaved")}</span>}
+          {status.state === "error" && (
             <span className="text-[color:var(--color-accent)]">
-              {saveError}
+              {status.error}
             </span>
           )}
-          {saveState === "idle" && <span>{t("set.autoSaveHint")}</span>}
+          {status.state === "idle" && <span>{t("set.autoSaveHint")}</span>}
         </div>
       </form>
 

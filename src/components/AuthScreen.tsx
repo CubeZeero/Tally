@@ -13,9 +13,11 @@ type Action = (prev: ActionState, fd: FormData) => Promise<ActionState>;
 export function AuthScreen({
   mode,
   action,
+  next,
 }: {
   mode: "register" | "login";
   action: Action;
+  next?: string;
 }) {
   const { t, lang } = useLang();
   const router = useRouter();
@@ -57,6 +59,7 @@ export function AuthScreen({
         </p>
 
         <form action={formAction} className="mt-10 space-y-6">
+          {next ? <input type="hidden" name="next" value={next} /> : null}
           <div>
             <label className="label label-soft">{t("auth.username")}</label>
             <input

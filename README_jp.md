@@ -124,6 +124,21 @@ docker compose up -d --build
 
 特定リリースへの固定・ロールバックは `git checkout v1.0.0`。
 
+## REST API
+
+REST APIは `/api/v1` から利用できます。**環境設定 → MCP連携** でAPIキーを発行し、`Authorization: Bearer` ヘッダーで送ります。取得できるのはキーを発行したユーザー自身のデータです。環境設定でキーを失効すると、すぐにアクセスできなくなります。
+
+登録・編集・停止／再開・複製・削除には、同じ設定欄で別途 **REST API 書き込みキー** を発行し、Bearerヘッダーに指定します。停止は `active: false`、再開は `active: true` を送ります。
+
+```sh
+curl -fsS -H "Authorization: Bearer ${TALLY_API_KEY}" \
+  'http://localhost:6400/api/v1/subscriptions?activeOnly=true'
+```
+
+[OpenAPI定義](public/openapi.json)と[実行用のHTTPリクエスト集](docs/rest-api.http)を用意しています。curlの例では手元のシェルで `TALLY_API_KEY` を設定してください。別の端末から接続する場合はURLを置き換え、実際のキーはGitに保存しないでください。
+
+対応するMCPの操作は[MCPツール一覧](docs/mcp-tools.md)を参照してください。
+
 ## ローカル開発
 
 ```bash

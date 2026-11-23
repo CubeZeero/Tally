@@ -10,7 +10,7 @@ import {
 } from "@/lib/services/integration-input";
 import { changeSubscriptionLabel } from "@/lib/services/subscription-labels";
 import { previewSubscriptionImport } from "@/lib/services/import-preview";
-import type { Cycle } from "@/lib/money";
+import { createInput, patchInput, subscriptionInput, updateSubscriptionInput } from "@/lib/services/rest-subscription-input";
 import { getUserIdByApiKey } from "@/lib/auth";
 import { mcpResource, publicOrigin, verifyAccessToken } from "@/lib/oauth";
 import {
@@ -28,7 +28,6 @@ import {
   updateSubscription,
   toggleSubscription,
   duplicateSubscription,
-  type SubscriptionWrite,
 } from "@/lib/services/subscriptions";
 import { APP_VERSION } from "@/lib/version";
 
@@ -53,73 +52,6 @@ function denyWithoutWrite(extra: { authInfo?: AuthInfo }) {
     : errorResult(
         "This connection is read-only. Reconnect via OAuth and approve write access (tally:write) to modify subscriptions.",
       );
-}
-
-// Zod shape for a subscription write (shared by create/update; update makes all optional).
-const writeFields = {
-  name: z.string().describe("Display name"),
-  cost: z.number().describe("Price per billing period"),
-  currency: z.string().optional().describe("ISO code, e.g. USD; omit to use the main currency"),
-  cycle: z.enum(["day", "week", "month", "year"]).optional().describe("Billing cycle unit (default month)"),
-  cycleCount: z.number().int().min(1).optional().describe("Every N cycle units (default 1)"),
-  startDate: z.string().optional().describe("First billing date, YYYY-MM-DD (default today)"),
-  nextBillDate: z.string().optional().describe("Explicit next payment date, YYYY-MM-DD"),
-  trialEndDate: z.string().optional().describe("Free-trial end date, YYYY-MM-DD"),
-  description: z.string().optional(),
-  category: z.string().optional(),
-  paymentMethod: z.string().optional(),
-  url: z.string().optional(),
-  cancelReminderDays: z.number().int().min(0).optional().describe("Remind to review this many days before renewal"),
-  color: z.string().optional().describe("Hex color, e.g. #ff7a00"),
-  active: z.boolean().optional(),
-};
-type WriteArgs = {
-  name?: string;
-  cost?: number;
-  currency?: string;
-  cycle?: Cycle;
-  cycleCount?: number;
-  startDate?: string;
-  nextBillDate?: string;
-  trialEndDate?: string;
-  description?: string;
-  category?: string;
-  paymentMethod?: string;
-  url?: string;
-  cancelReminderDays?: number;
-  color?: string;
-  active?: boolean;
-};
-
-function fullWrite(a: WriteArgs): SubscriptionWrite {
-  const defaults = subscriptionWriteDefaults();
-  return {
-    ...defaults,
-    ...partialWrite(a),
-    name: a.name?.trim() ?? "",
-    cost: Number.isFinite(a.cost) ? (a.cost as number) : 0,
-    color: a.color || defaults.color,
-  };
-}
-
-function partialWrite(a: WriteArgs): Partial<SubscriptionWrite> {
-  const d: Partial<SubscriptionWrite> = {};
-  if (a.name !== undefined) d.name = a.name.trim();
-  if (a.cost !== undefined) d.cost = a.cost;
-  if (a.currency !== undefined) d.currency = a.currency.trim() || null;
-  if (a.cycle !== undefined) d.cycle = a.cycle;
-  if (a.cycleCount !== undefined) d.cycleCount = Math.max(1, a.cycleCount);
-  if (a.startDate !== undefined) d.startDate = new Date(a.startDate);
-  if (a.nextBillDate !== undefined) d.nextBillDate = a.nextBillDate ? new Date(a.nextBillDate) : null;
-  if (a.trialEndDate !== undefined) d.trialEndDate = a.trialEndDate ? new Date(a.trialEndDate) : null;
-  if (a.description !== undefined) d.description = a.description.trim() || null;
-  if (a.category !== undefined) d.category = a.category.trim() || null;
-  if (a.paymentMethod !== undefined) d.paymentMethod = a.paymentMethod.trim() || null;
-  if (a.url !== undefined) d.url = a.url.trim() || null;
-  if (a.cancelReminderDays !== undefined) d.cancelReminderDays = a.cancelReminderDays;
-  if (a.color !== undefined) d.color = a.color;
-  if (a.active !== undefined) d.active = a.active;
-  return d;
 }
 
 function createServer() {
@@ -237,23 +169,27 @@ function createServer() {
   server.tool(
     "create_subscription",
     "Create a new subscription. Requires the tally:write scope.",
-    writeFields,
+    subscriptionInput.shape,
     async (a, extra) => {
       const denied = denyWithoutWrite(extra);
       if (denied) return denied;
-      return json(await createSubscription(userIdOf(extra), fullWrite(a)));
+      const parsed = createInput.safeParse(a);
+      if (!parsed.success) return errorResult("Invalid subscription fields.");
+      return json(await createSubscription(userIdOf(extra), { ...subscriptionWriteDefaults(), ...parsed.data }));
     },
   );
 
   server.tool(
     "update_subscription",
     "Update fields of an existing subscription (only the fields you pass change). Requires tally:write.",
-    { id: z.string().describe("Subscription id"), ...Object.fromEntries(Object.entries(writeFields).map(([k, v]) => [k, v.optional()])) },
+    { id: z.string().describe("Subscription id"), ...updateSubscriptionInput.shape },
     async (a, extra) => {
       const denied = denyWithoutWrite(extra);
       if (denied) return denied;
-      const { id, ...rest } = a as WriteArgs & { id: string };
-      const s = await updateSubscription(userIdOf(extra), id, partialWrite(rest));
+      const { id, ...rest } = a;
+      const parsed = patchInput.safeParse(rest);
+      if (!parsed.success) return errorResult("Provide at least one valid subscription field.");
+      const s = await updateSubscription(userIdOf(extra), id, parsed.data);
       return s ? json(s) : notFound();
     },
   );

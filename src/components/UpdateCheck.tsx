@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { ArrowClockwise } from "@phosphor-icons/react/dist/ssr";
 import { useLang } from "./LangProvider";
 import { checkForUpdates } from "@/app/actions";
+import { DISPLAY_VERSION, IS_DEVELOPMENT_BUILD } from "@/lib/version";
 import type { UpdateInfo } from "@/lib/update";
 
 /**
@@ -35,8 +36,13 @@ export function UpdateCheck({
       {/* Version + current status */}
       <div className="flex flex-wrap items-center gap-2.5">
         <span className="inline-flex items-center rounded-full border border-[color:var(--color-line)] px-3 py-1 text-sm font-medium tabular-nums">
-          v{info.current}
+          v{DISPLAY_VERSION}
         </span>
+        {IS_DEVELOPMENT_BUILD && (
+          <span className="text-sm font-medium text-[color:var(--color-accent)]">
+            {t("about.developmentBuild")}
+          </span>
+        )}
         {info.latest &&
           (info.updateAvailable ? (
             <a
@@ -49,7 +55,9 @@ export function UpdateCheck({
             </a>
           ) : (
             <span className="text-sm text-[color:var(--color-ink-soft)]">
-              {t("about.upToDate")}
+              {IS_DEVELOPMENT_BUILD
+                ? t("about.latestStable", { latest: info.latest })
+                : t("about.upToDate")}
             </span>
           ))}
       </div>

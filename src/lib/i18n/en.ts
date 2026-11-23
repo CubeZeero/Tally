@@ -233,6 +233,8 @@ export const en = {
     "A self-hostable subscription manager. See your plans' cost, renewal dates, and spend at a glance.",
   "about.version": "Version {v}",
   "about.updateAvailable": "v{latest} available",
+  "about.developmentBuild": "Development build",
+  "about.latestStable": "Latest stable version: v{latest}",
   "about.upToDate": "Up to date",
   "update.available": "Version {latest} is available — you have {current}.",
   "update.how": "How to update",
